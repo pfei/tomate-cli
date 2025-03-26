@@ -25,5 +25,11 @@
     "@types/node": "^22.13.13",
     "copyfiles": "^2.4.1",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "boxen": "^8.0.1",
+    "chalk": "^5.4.1",
+    "cli-cursor": "^5.0.0",
+    "ts-node": "^10.9.2"
   }
 }
