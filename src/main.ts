@@ -11,49 +11,48 @@ if (!existsSync(audioPath)) {
   throw new Error(`Audio file not found: ${audioPath.replace(process.cwd(), ".")}`);
 }
 
-// Start audio playback
-const ffplayProcess = spawn("ffplay", ["-nodisp", "-autoexit", "-loglevel", "quiet", audioPath], {
-  detached: true,
-  stdio: "ignore",
-});
+// Function to play audio
+function playAudio(): void {
+  const ffplayProcess = spawn("ffplay", ["-nodisp", "-autoexit", "-loglevel", "quiet", audioPath], {
+    detached: true,
+    stdio: "ignore",
+  });
 
-ffplayProcess
-  .on("error", (err) => console.error("🎵 Playback failed:", err))
-  .on("exit", (code) => code && console.error("Playback stopped with code:", code))
-  .unref();
+  ffplayProcess
+    .on("error", (err) => console.error("🎵 Playback failed:", err))
+    .on("exit", (code) => code && console.error("Playback stopped with code:", code))
+    .unref();
+}
 
-// console.log("🎵 Playing:", audioPath.replace(process.cwd(), "."));
-
-// Clock setup
-function formatTime(date: Date, is12h: boolean): string {
-  let hours = date.getHours();
-  const suffix = is12h ? (hours >= 12 ? " PM" : " AM") : "";
-
-  if (is12h) hours = hours % 12 || 12; // Convert to 12h format
+// Countdown setup
+function formatTime(secondsLeft: number): string {
+  const hours = Math.floor(secondsLeft / 3600);
+  const minutes = Math.floor((secondsLeft % 3600) / 60);
+  const seconds = secondsLeft % 60;
 
   return [
     chalk.cyan(hours.toString().padStart(2, "0")),
     chalk.yellow(":"),
-    chalk.cyan(date.getMinutes().toString().padStart(2, "0")),
+    chalk.cyan(minutes.toString().padStart(2, "0")),
     chalk.yellow(":"),
-    chalk.cyan(date.getSeconds().toString().padStart(2, "0")),
-    is12h ? chalk.magenta(suffix) : "",
+    chalk.cyan(seconds.toString().padStart(2, "0")),
   ].join("");
 }
 
 let firstRender = true;
 
-function displayClock(is12h: boolean): void {
-  const timeString = formatTime(new Date(), is12h);
+function displayCountdown(secondsLeft: number): void {
+  const timeString = formatTime(secondsLeft);
   const boxedTime = boxen(timeString, {
     padding: 1,
     borderColor: "cyan",
     borderStyle: "round",
     titleAlignment: "center",
+    // title: "Countdown Timer",
   });
 
   if (firstRender) {
-    // First render: Just print the clock
+    // First render: Just print the timer
     process.stdout.write(boxedTime + "\n");
     firstRender = false;
   } else {
@@ -66,7 +65,7 @@ function displayClock(is12h: boolean): void {
 cliCursor.hide();
 
 // Cleanup handlers
-function cleanup() {
+function cleanup(): void {
   cliCursor.show();
   process.exit();
 }
@@ -75,7 +74,25 @@ process.on("exit", cleanup);
 process.on("SIGINT", cleanup); // Ctrl+C
 process.on("SIGTERM", cleanup); // Termination signal
 
-// Start clock
-const is12h = process.argv.includes("--12h");
-setInterval(() => displayClock(is12h), 1000);
-displayClock(is12h); // Initial render
+// Start countdown
+const durationInSeconds = parseInt(process.argv[2], 10); // Accept duration as command-line argument
+if (isNaN(durationInSeconds) || durationInSeconds <= 0) {
+  console.error(chalk.red("Please provide a valid countdown duration in seconds as an argument."));
+  process.exit(1);
+}
+
+let secondsLeft = durationInSeconds;
+
+const countdownInterval = setInterval(() => {
+  displayCountdown(secondsLeft);
+  secondsLeft -= 1;
+
+  if (secondsLeft < 0) {
+    clearInterval(countdownInterval);
+    playAudio();
+    console.log(chalk.green("\n🎉 Time's up!"));
+    cleanup();
+  }
+}, 1000);
+
+displayCountdown(secondsLeft);
