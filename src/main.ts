@@ -5,6 +5,7 @@ import chalk from "chalk";
 import boxen from "boxen";
 import cliCursor from "cli-cursor";
 import dotenv from "dotenv";
+import readline from "readline";
 
 // Load environment variables
 dotenv.config();
@@ -45,9 +46,11 @@ function formatTime(secondsLeft: number): string {
 
 let firstRender = true;
 
-function displayCountdown(secondsLeft: number): void {
+function displayCountdown(secondsLeft: number, isPaused: boolean): void {
   const timeString = formatTime(secondsLeft);
-  const boxedTime = boxen(timeString, {
+  const pauseMessage = isPaused ? chalk.red("[PAUSED]") : "";
+
+  const boxedTime = boxen(`${timeString} ${pauseMessage}\n\n[p]ause`, {
     padding: 1,
     borderColor: "cyan",
     borderStyle: "round",
@@ -60,7 +63,7 @@ function displayCountdown(secondsLeft: number): void {
     firstRender = false;
   } else {
     // Subsequent renders: Move cursor up and overwrite
-    process.stdout.write("\x1B[5A\x1B[0J" + boxedTime + "\n");
+    process.stdout.write("\x1B[7A\x1B[0J" + boxedTime + "\n");
   }
 }
 
@@ -116,24 +119,43 @@ if (isNaN(durationInSeconds) || durationInSeconds <= 0) {
 }
 
 let secondsLeft = durationInSeconds;
+let isPaused = false; // Pause state
 
+// Keypress listener for pause/resume functionality
+readline.emitKeypressEvents(process.stdin);
+process.stdin.setRawMode(true);
+
+process.stdin.on("keypress", (str, key) => {
+  if (key.name === "p") {
+    isPaused = !isPaused; // Toggle pause state
+    displayCountdown(secondsLeft, isPaused); // Update display with pause message
+  } else if (key.ctrl && key.name === "c") {
+    cleanup();
+    process.exit(); // Handle Ctrl+C gracefully
+  }
+});
+
+// Countdown logic with pause handling
 const countdownInterval = setInterval(() => {
-  displayCountdown(secondsLeft);
-  secondsLeft -= 1;
+  if (!isPaused) {
+    // Only decrement timer if not paused
+    displayCountdown(secondsLeft, isPaused);
+    secondsLeft -= 1;
 
-  if (secondsLeft < 0) {
-    clearInterval(countdownInterval);
-    playAudio();
-    console.log(chalk.green("\n🎉 Time's up!"));
+    if (secondsLeft < 0) {
+      clearInterval(countdownInterval);
+      playAudio();
+      console.log(chalk.green("\n🎉 Time's up!"));
 
-    // Show popup and then cleanup
-    showTimeUpPopup()
-      .then(() => process.exit())
-      .catch((err) => {
-        console.error(chalk.red("Popup error:"), err);
-        process.exit(1);
-      });
+      // Show popup and then cleanup
+      showTimeUpPopup()
+        .then(() => process.exit())
+        .catch((err) => {
+          console.error(chalk.red("Popup error:"), err);
+          process.exit(1);
+        });
+    }
   }
 }, 1000);
 
-displayCountdown(secondsLeft); // Initial render
+displayCountdown(secondsLeft, isPaused); // Initial render
