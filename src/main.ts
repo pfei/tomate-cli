@@ -4,6 +4,10 @@ import { existsSync } from "node:fs";
 import chalk from "chalk";
 import boxen from "boxen";
 import cliCursor from "cli-cursor";
+import dotenv from "dotenv";
+
+// Load environment variables
+dotenv.config();
 
 // Audio setup
 const audioPath = fileURLToPath(new URL("audio.mp3", new URL("./assets/", import.meta.url)));
@@ -48,7 +52,6 @@ function displayCountdown(secondsLeft: number): void {
     borderColor: "cyan",
     borderStyle: "round",
     titleAlignment: "center",
-    // title: "Countdown Timer",
   });
 
   if (firstRender) {
@@ -61,13 +64,44 @@ function displayCountdown(secondsLeft: number): void {
   }
 }
 
+// Function to show a popup using `yad`
+function showTimeUpPopup(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const args = [
+      "--center",
+      "--sticky",
+      "--on-top",
+      "--button=(Return):0",
+      "--button-layout=center",
+      "--borders=20",
+      "--text=Time's Up!",
+      "--title=Tomate CLI",
+    ];
+
+    // Use existing env vars + add GTK_THEME if present
+    const env = {
+      ...process.env,
+      ...(process.env.GTK_THEME && { GTK_THEME: process.env.GTK_THEME }),
+    };
+
+    const yadProcess = spawn("yad", args, {
+      env,
+      stdio: "ignore",
+      detached: true,
+    });
+
+    yadProcess.on("error", reject).on("exit", (code) => {
+      code === 0 ? resolve() : reject(new Error(`Yad exited with code ${code}`));
+    });
+  });
+}
+
 // Cursor management
 cliCursor.hide();
 
 // Cleanup handlers
 function cleanup(): void {
   cliCursor.show();
-  process.exit();
 }
 
 process.on("exit", cleanup);
@@ -91,8 +125,15 @@ const countdownInterval = setInterval(() => {
     clearInterval(countdownInterval);
     playAudio();
     console.log(chalk.green("\n🎉 Time's up!"));
-    cleanup();
+
+    // Show popup and then cleanup
+    showTimeUpPopup()
+      .then(() => process.exit())
+      .catch((err) => {
+        console.error(chalk.red("Popup error:"), err);
+        process.exit(1);
+      });
   }
 }, 1000);
 
-displayCountdown(secondsLeft);
+displayCountdown(secondsLeft); // Initial render
