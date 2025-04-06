@@ -50,7 +50,7 @@ function displayCountdown(secondsLeft: number, isPaused: boolean): void {
   const timeString = formatTime(secondsLeft);
   const pauseMessage = isPaused ? chalk.red("[PAUSED]") : "";
 
-  const boxedTime = boxen(`${timeString} ${pauseMessage}\n\n[p]ause`, {
+  const boxedTime = boxen(`${timeString} ${pauseMessage}\n\n[p]ause         [q]uit`, {
     padding: 1,
     borderColor: "cyan",
     borderStyle: "round",
@@ -121,7 +121,7 @@ if (isNaN(durationInSeconds) || durationInSeconds <= 0) {
 let secondsLeft = durationInSeconds;
 let isPaused = false; // Pause state
 
-// Keypress listener for pause/resume functionality
+// Keypress listener for pause/resume and quit functionality
 readline.emitKeypressEvents(process.stdin);
 process.stdin.setRawMode(true);
 
@@ -129,6 +129,10 @@ process.stdin.on("keypress", (str, key) => {
   if (key.name === "p") {
     isPaused = !isPaused; // Toggle pause state
     displayCountdown(secondsLeft, isPaused); // Update display with pause message
+  } else if (key.name === "q") {
+    console.log(chalk.yellow("\n👋 Countdown quit by user."));
+    cleanup();
+    process.exit(); // Exit on 'q' key press
   } else if (key.ctrl && key.name === "c") {
     cleanup();
     process.exit(); // Handle Ctrl+C gracefully
