@@ -7,6 +7,8 @@ import cliCursor from "cli-cursor";
 import dotenv from "dotenv";
 import readline from "readline";
 
+import { loadConfig, saveConfig } from "./utils/config.js";
+
 // Load environment variables
 dotenv.config();
 
@@ -112,13 +114,9 @@ process.on("SIGINT", cleanup); // Ctrl+C
 process.on("SIGTERM", cleanup); // Termination signal
 
 // Start countdown
-const durationInSeconds = parseInt(process.argv[2], 10); // Accept duration as command-line argument
-if (isNaN(durationInSeconds) || durationInSeconds <= 0) {
-  console.error(chalk.red("Please provide a valid countdown duration in seconds as an argument."));
-  process.exit(1);
-}
+const { pomodoro } = loadConfig();
+let secondsLeft = pomodoro;
 
-let secondsLeft = durationInSeconds;
 let isPaused = false; // Pause state
 
 // Keypress listener for pause/resume and quit functionality
