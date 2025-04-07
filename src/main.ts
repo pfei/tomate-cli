@@ -18,6 +18,12 @@ if (!existsSync(audioPath)) {
   throw new Error(`Audio file not found: ${audioPath.replace(process.cwd(), ".")}`);
 }
 
+// State management
+let inConfigMenu = false;
+let isPaused = false;
+let firstRender = true;
+let currentRL: readline.Interface | null = null;
+
 // Function to play audio
 function playAudio(): void {
   const ffplayProcess = spawn("ffplay", ["-nodisp", "-autoexit", "-loglevel", "quiet", audioPath], {
@@ -46,13 +52,13 @@ function formatTime(secondsLeft: number): string {
   ].join("");
 }
 
-let firstRender = true;
-
 function displayCountdown(secondsLeft: number, isPaused: boolean): void {
+  if (inConfigMenu) return;
+
   const timeString = formatTime(secondsLeft);
   const pauseMessage = isPaused ? chalk.red("[PAUSED]") : "";
 
-  const boxedTime = boxen(`${timeString} ${pauseMessage}\n\n[p]ause         [q]uit`, {
+  const boxedTime = boxen(`${timeString} ${pauseMessage}\n\n` + `[p]ause   [q]uit   [c]onfig`, {
     padding: 1,
     borderColor: "cyan",
     borderStyle: "round",
@@ -60,16 +66,14 @@ function displayCountdown(secondsLeft: number, isPaused: boolean): void {
   });
 
   if (firstRender) {
-    // First render: Just print the timer
     process.stdout.write(boxedTime + "\n");
     firstRender = false;
   } else {
-    // Subsequent renders: Move cursor up and overwrite
     process.stdout.write("\x1B[7A\x1B[0J" + boxedTime + "\n");
   }
 }
 
-// Function to show a popup using `yad`
+// Popup function
 function showTimeUpPopup(): Promise<void> {
   return new Promise((resolve, reject) => {
     const args = [
@@ -83,7 +87,6 @@ function showTimeUpPopup(): Promise<void> {
       "--title=Tomate CLI",
     ];
 
-    // Use existing env vars + add GTK_THEME if present
     const env = {
       ...process.env,
       ...(process.env.GTK_THEME && { GTK_THEME: process.env.GTK_THEME }),
@@ -101,46 +104,146 @@ function showTimeUpPopup(): Promise<void> {
   });
 }
 
+// Configuration menu
+function showConfigMenu(): void {
+  const wasPaused = isPaused;
+  isPaused = true;
+  inConfigMenu = true;
+
+  const config = loadConfig();
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  currentRL = rl;
+
+  process.stdout.write("\x1B[2J\x1B[0f"); // Clear screen
+  console.log(
+    boxen(
+      chalk.green("Configure Pomodoro Timers\n\n") +
+        `Current Values:\n` +
+        `🍅 Pomodoro: ${chalk.cyan(formatTime(config.pomodoro))}\n` +
+        `☕ Short Break: ${chalk.cyan(formatTime(config.shortBreak))}\n` +
+        `🌴 Long Break: ${chalk.cyan(formatTime(config.longBreak))}\n\n` +
+        "[1] Set Pomodoro\n" +
+        "[2] Set Short Break\n" +
+        "[3] Set Long Break\n" +
+        "[q] Back to Timer",
+      {
+        padding: 1,
+        borderColor: "green",
+        borderStyle: "round",
+      },
+    ),
+  );
+
+  rl.question(chalk.cyan("Choose an option: "), (answer) => {
+    const handleInput = (prompt: string, property: keyof typeof config) => {
+      rl.question(chalk.cyan(prompt), (value) => {
+        const secs = parseInt(value, 10);
+        if (!isNaN(secs) && secs > 0) {
+          config[property] = secs;
+          saveConfig(config);
+          console.log(
+            chalk.green(`✅ Updated ${property.replace(/([A-Z])/g, " $1").toLowerCase()}`),
+          );
+          if (property === "pomodoro") {
+            secondsLeft = secs; // Update current timer
+          }
+        } else {
+          console.log(chalk.red("❌ Invalid duration (must be positive number)"));
+        }
+        cleanupReadline();
+        process.stdout.write("\x1B[2J\x1B[0f");
+        displayCountdown(secondsLeft, wasPaused);
+      });
+    };
+
+    const cleanupReadline = () => {
+      rl.close();
+      currentRL = null;
+      inConfigMenu = false;
+      isPaused = wasPaused;
+      process.stdin.setRawMode(true); // Re-enable raw mode after readline
+      process.stdin.resume(); // Resume stdin
+    };
+
+    switch (answer) {
+      case "1":
+        handleInput("New Pomodoro (seconds): ", "pomodoro");
+        break;
+      case "2":
+        handleInput("New Short Break (seconds): ", "shortBreak");
+        break;
+      case "3":
+        handleInput("New Long Break (seconds): ", "longBreak");
+        break;
+      case "q":
+        cleanupReadline();
+        process.stdout.write("\x1B[2J\x1B[0f");
+        displayCountdown(secondsLeft, wasPaused);
+        break;
+      default:
+        console.log(chalk.red("⚠ Invalid option"));
+        cleanupReadline();
+        process.stdout.write("\x1B[2J\x1B[0f");
+        displayCountdown(secondsLeft, wasPaused);
+    }
+  });
+}
+
 // Cursor management
 cliCursor.hide();
 
 // Cleanup handlers
 function cleanup(): void {
+  if (currentRL) {
+    currentRL.close();
+    currentRL = null;
+  }
   cliCursor.show();
+  process.stdin.setRawMode(false);
 }
 
 process.on("exit", cleanup);
-process.on("SIGINT", cleanup); // Ctrl+C
-process.on("SIGTERM", cleanup); // Termination signal
+process.on("SIGINT", () => {
+  cleanup();
+  process.exit();
+});
+process.on("SIGTERM", () => {
+  cleanup();
+  process.exit();
+});
 
-// Start countdown
+// Initialize timer
 const { pomodoro } = loadConfig();
 let secondsLeft = pomodoro;
 
-let isPaused = false; // Pause state
-
-// Keypress listener for pause/resume and quit functionality
+// Keypress listener
 readline.emitKeypressEvents(process.stdin);
 process.stdin.setRawMode(true);
 
 process.stdin.on("keypress", (str, key) => {
+  if (inConfigMenu) return;
+
   if (key.name === "p") {
-    isPaused = !isPaused; // Toggle pause state
-    displayCountdown(secondsLeft, isPaused); // Update display with pause message
+    isPaused = !isPaused;
+    displayCountdown(secondsLeft, isPaused);
   } else if (key.name === "q") {
-    console.log(chalk.yellow("\n👋 Countdown quit by user."));
+    console.log(chalk.yellow("\n👋 Quitting..."));
     cleanup();
-    process.exit(); // Exit on 'q' key press
+    process.exit();
+  } else if (key.name === "c") {
+    showConfigMenu();
   } else if (key.ctrl && key.name === "c") {
     cleanup();
-    process.exit(); // Handle Ctrl+C gracefully
+    process.exit();
   }
 });
 
-// Countdown logic with pause handling
+// Countdown logic
 const countdownInterval = setInterval(() => {
-  if (!isPaused) {
-    // Only decrement timer if not paused
+  if (!isPaused && !inConfigMenu) {
     displayCountdown(secondsLeft, isPaused);
     secondsLeft -= 1;
 
@@ -148,8 +251,6 @@ const countdownInterval = setInterval(() => {
       clearInterval(countdownInterval);
       playAudio();
       console.log(chalk.green("\n🎉 Time's up!"));
-
-      // Show popup and then cleanup
       showTimeUpPopup()
         .then(() => process.exit())
         .catch((err) => {
@@ -160,4 +261,4 @@ const countdownInterval = setInterval(() => {
   }
 }, 1000);
 
-displayCountdown(secondsLeft, isPaused); // Initial render
+displayCountdown(secondsLeft, isPaused);
