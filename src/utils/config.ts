@@ -1,10 +1,11 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import chalk from "chalk";
 import { displayError } from "./errors.js";
+import { validateAndNotify } from "./validation.js";
 
-type Config = {
+export type Config = {
   pomodoro: number;
   shortBreak: number;
   longBreak: number;
@@ -12,7 +13,7 @@ type Config = {
 
 const CONFIG_DIR = process.env.XDG_CONFIG_HOME || join(homedir(), ".config");
 const CONFIG_PATH = join(CONFIG_DIR, "tomate-cli", "config.json");
-const DEFAULT_CONFIG: Config = {
+export const DEFAULT_CONFIG: Config = {
   pomodoro: 1500,
   shortBreak: 300,
   longBreak: 900,
@@ -21,22 +22,47 @@ const DEFAULT_CONFIG: Config = {
 export function loadConfig(): Config {
   try {
     if (!existsSync(CONFIG_PATH)) return DEFAULT_CONFIG;
-    return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
+
+    const config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
+    const mergedConfig = { ...DEFAULT_CONFIG, ...config };
+
+    // Validate loaded config
+    if (!validateAndNotify(mergedConfig)) {
+      console.log(chalk.yellow("⚠ Invalid configuration detected. Using defaults."));
+      return DEFAULT_CONFIG;
+    }
+
+    return mergedConfig;
   } catch (error) {
-    displayError("Config load failed", error);
-    console.error(chalk.red("⚠ Error loading config:"), error);
+    if (error instanceof SyntaxError) {
+      console.log(chalk.red("⛔ Config load failed: Invalid JSON format."));
+      console.log(chalk.yellow("⚠ Reverting to default configuration."));
+    } else {
+      displayError("Unexpected config load error", error);
+    }
     return DEFAULT_CONFIG;
   }
 }
-
-export function saveConfig(config: Config): void {
+export function saveConfig(newConfig: Partial<Config>): boolean {
   try {
-    const dir = join(CONFIG_DIR, "tomate-cli");
-    if (!existsSync(dir)) {
-      require("node:fs").mkdirSync(dir, { recursive: true });
+    if (!validateAndNotify(newConfig)) {
+      return false;
     }
-    writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+
+    // Merge with existing config
+    const currentConfig = existsSync(CONFIG_PATH)
+      ? JSON.parse(readFileSync(CONFIG_PATH, "utf-8"))
+      : DEFAULT_CONFIG;
+    const updatedConfig = { ...currentConfig, ...newConfig };
+
+    const configDir = join(CONFIG_DIR, "tomate-cli");
+    if (!existsSync(configDir)) {
+      mkdirSync(configDir, { recursive: true });
+    }
+    writeFileSync(CONFIG_PATH, JSON.stringify(updatedConfig, null, 2));
+    return true;
   } catch (error) {
-    console.error(chalk.red("⚠ Error saving config:"), error);
+    displayError("Config save failed", error);
+    return false;
   }
 }
