@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 import readline from "readline";
 import { loadConfig, saveConfig } from "./utils/config.js";
 import { displayError } from "./utils/errors.js";
+import { getState, updateState, resetState } from "./core/state.js";
 
 // Load environment variables
 dotenv.config();
@@ -20,12 +21,13 @@ if (!existsSync(audioPath)) {
 }
 
 // State management
-let inConfigMenu = false;
-let isPaused = false;
+// let inConfigMenu = false;
+// let isPaused = false;
+// let secondsLeft = loadConfig().pomodoro;
+
 let firstRender = true;
 let currentRL: readline.Interface | null = null;
 let countdownInterval: NodeJS.Timeout | null = null;
-let secondsLeft = loadConfig().pomodoro;
 
 function playAudio(): void {
   const ffplayProcess = spawn("ffplay", ["-nodisp", "-autoexit", "-loglevel", "quiet", audioPath], {
@@ -54,7 +56,7 @@ function formatTime(secondsLeft: number): string {
 }
 
 function displayCountdown(secondsLeft: number, isPaused: boolean): void {
-  if (inConfigMenu) return;
+  if (getState().inConfigMenu) return;
 
   const timeString = formatTime(secondsLeft);
   const pauseMessage = isPaused ? chalk.red("[PAUSED]") : "";
@@ -106,15 +108,15 @@ function showTimeUpPopup(): Promise<void> {
 
 function startCountdown(initialSeconds: number): void {
   stopCountdown(); // Clear existing interval
-  secondsLeft = initialSeconds;
+  getState().secondsLeft = initialSeconds;
   firstRender = true;
 
   countdownInterval = setInterval(() => {
-    if (!isPaused && !inConfigMenu) {
-      displayCountdown(secondsLeft, isPaused);
-      secondsLeft -= 1;
+    if (!getState().isPaused && !getState().inConfigMenu) {
+      displayCountdown(getState().secondsLeft, getState().isPaused);
+      updateState({ secondsLeft: getState().secondsLeft - 1 });
 
-      if (secondsLeft < 0) {
+      if (getState().secondsLeft < 0) {
         stopCountdown();
         playAudio();
         console.log(chalk.green("\n🎉 Time's up!"));
@@ -140,10 +142,9 @@ function stopCountdown(): void {
 }
 
 function showConfigMenu(): void {
-  const wasPaused = isPaused;
-  isPaused = true;
-  inConfigMenu = true;
-
+  const wasPaused = getState().isPaused;
+  updateState({ isPaused: true });
+  updateState({ inConfigMenu: true });
   const config = loadConfig();
   const rl = readline.createInterface({
     input: process.stdin,
@@ -182,22 +183,22 @@ function showConfigMenu(): void {
             chalk.green(`✅ Updated ${property.replace(/([A-Z])/g, " $1").toLowerCase()}`),
           );
           if (property === "pomodoro") {
-            secondsLeft = secs;
+            updateState({ secondsLeft: secs });
           }
         } else {
           console.log(chalk.red("❌ Invalid duration (must be positive number)"));
         }
         cleanupReadline();
         process.stdout.write("\x1B[2J\x1B[0f");
-        displayCountdown(secondsLeft, wasPaused);
+        displayCountdown(getState().secondsLeft, wasPaused);
       });
     };
 
     const cleanupReadline = () => {
       rl.close();
       currentRL = null;
-      inConfigMenu = false;
-      isPaused = wasPaused;
+      updateState({ inConfigMenu: false });
+      updateState({ isPaused: wasPaused });
       process.stdin.setRawMode(true);
       process.stdin.resume();
     };
@@ -215,13 +216,13 @@ function showConfigMenu(): void {
       case "q":
         cleanupReadline();
         process.stdout.write("\x1B[2J\x1B[0f");
-        displayCountdown(secondsLeft, wasPaused);
+        displayCountdown(getState().secondsLeft, wasPaused);
         break;
       default:
         console.log(chalk.red("⚠ Invalid option"));
         cleanupReadline();
         process.stdout.write("\x1B[2J\x1B[0f");
-        displayCountdown(secondsLeft, wasPaused);
+        displayCountdown(getState().secondsLeft, wasPaused);
     }
   });
 }
@@ -252,11 +253,11 @@ readline.emitKeypressEvents(process.stdin);
 process.stdin.setRawMode(true);
 
 process.stdin.on("keypress", (str, key) => {
-  if (inConfigMenu) return;
+  if (getState().inConfigMenu) return;
 
   if (key.name === "p") {
-    isPaused = !isPaused;
-    displayCountdown(secondsLeft, isPaused);
+    updateState({ isPaused: !getState().isPaused });
+    displayCountdown(getState().secondsLeft, getState().isPaused);
   } else if (key.name === "q") {
     console.log(chalk.yellow("\n👋 Quitting..."));
     cleanup();
