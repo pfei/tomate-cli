@@ -32,3 +32,19 @@ export function resetState(): void {
     secondsLeft: loadConfig().pomodoro,
   };
 }
+
+export function advanceCycle(): void {
+  const newState = { ...state };
+
+  if (newState.currentMode === "pomodoro") {
+    newState.currentCycle++;
+    newState.currentMode = newState.currentCycle % 4 === 0 ? "longBreak" : "shortBreak";
+  } else {
+    newState.currentMode = "pomodoro";
+  }
+
+  const config = loadConfig();
+  newState.secondsLeft = config[newState.currentMode];
+
+  state = newState;
+}
