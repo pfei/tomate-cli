@@ -2,6 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import chalk from "chalk";
+import { displayError } from "./errors.js";
 
 type Config = {
   pomodoro: number;
@@ -22,6 +23,7 @@ export function loadConfig(): Config {
     if (!existsSync(CONFIG_PATH)) return DEFAULT_CONFIG;
     return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
   } catch (error) {
+    displayError("Config load failed", error);
     console.error(chalk.red("⚠ Error loading config:"), error);
     return DEFAULT_CONFIG;
   }

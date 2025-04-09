@@ -8,11 +8,13 @@ import cliCursor from "cli-cursor";
 import dotenv from "dotenv";
 import readline from "readline";
 import { loadConfig, saveConfig } from "./utils/config.js";
+import { displayError } from "./utils/errors.js";
 
 // Load environment variables
 dotenv.config();
 
 const audioPath = fileURLToPath(new URL("audio.mp3", new URL("./assets/", import.meta.url)));
+
 if (!existsSync(audioPath)) {
   throw new Error(`Audio file not found: ${audioPath.replace(process.cwd(), ".")}`);
 }
@@ -122,7 +124,7 @@ function startCountdown(initialSeconds: number): void {
             process.exit(0);
           })
           .catch((err) => {
-            console.error(chalk.red("Popup error:"), err);
+            displayError("Popup failed", err);
             process.exit(1);
           });
       }
