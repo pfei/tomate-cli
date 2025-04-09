@@ -1,3 +1,4 @@
+// src/main.ts
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
@@ -6,13 +7,11 @@ import boxen from "boxen";
 import cliCursor from "cli-cursor";
 import dotenv from "dotenv";
 import readline from "readline";
-
 import { loadConfig, saveConfig } from "./utils/config.js";
 
 // Load environment variables
 dotenv.config();
 
-// Audio setup
 const audioPath = fileURLToPath(new URL("audio.mp3", new URL("./assets/", import.meta.url)));
 if (!existsSync(audioPath)) {
   throw new Error(`Audio file not found: ${audioPath.replace(process.cwd(), ".")}`);
@@ -23,8 +22,9 @@ let inConfigMenu = false;
 let isPaused = false;
 let firstRender = true;
 let currentRL: readline.Interface | null = null;
+let countdownInterval: NodeJS.Timeout | null = null;
+let secondsLeft = loadConfig().pomodoro;
 
-// Function to play audio
 function playAudio(): void {
   const ffplayProcess = spawn("ffplay", ["-nodisp", "-autoexit", "-loglevel", "quiet", audioPath], {
     detached: true,
@@ -37,7 +37,6 @@ function playAudio(): void {
     .unref();
 }
 
-// Countdown setup
 function formatTime(secondsLeft: number): string {
   const hours = Math.floor(secondsLeft / 3600);
   const minutes = Math.floor((secondsLeft % 3600) / 60);
@@ -73,7 +72,6 @@ function displayCountdown(secondsLeft: number, isPaused: boolean): void {
   }
 }
 
-// Popup function
 function showTimeUpPopup(): Promise<void> {
   return new Promise((resolve, reject) => {
     const args = [
@@ -104,7 +102,41 @@ function showTimeUpPopup(): Promise<void> {
   });
 }
 
-// Configuration menu
+function startCountdown(initialSeconds: number): void {
+  stopCountdown(); // Clear existing interval
+  secondsLeft = initialSeconds;
+  firstRender = true;
+
+  countdownInterval = setInterval(() => {
+    if (!isPaused && !inConfigMenu) {
+      displayCountdown(secondsLeft, isPaused);
+      secondsLeft -= 1;
+
+      if (secondsLeft < 0) {
+        stopCountdown();
+        playAudio();
+        console.log(chalk.green("\n🎉 Time's up!"));
+        showTimeUpPopup()
+          .then(() => {
+            cleanup();
+            process.exit(0);
+          })
+          .catch((err) => {
+            console.error(chalk.red("Popup error:"), err);
+            process.exit(1);
+          });
+      }
+    }
+  }, 1000);
+}
+
+function stopCountdown(): void {
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+}
+
 function showConfigMenu(): void {
   const wasPaused = isPaused;
   isPaused = true;
@@ -117,7 +149,7 @@ function showConfigMenu(): void {
   });
   currentRL = rl;
 
-  process.stdout.write("\x1B[2J\x1B[0f"); // Clear screen
+  process.stdout.write("\x1B[2J\x1B[0f");
   console.log(
     boxen(
       chalk.green("Configure Pomodoro Timers\n\n") +
@@ -148,7 +180,7 @@ function showConfigMenu(): void {
             chalk.green(`✅ Updated ${property.replace(/([A-Z])/g, " $1").toLowerCase()}`),
           );
           if (property === "pomodoro") {
-            secondsLeft = secs; // Update current timer
+            secondsLeft = secs;
           }
         } else {
           console.log(chalk.red("❌ Invalid duration (must be positive number)"));
@@ -164,8 +196,8 @@ function showConfigMenu(): void {
       currentRL = null;
       inConfigMenu = false;
       isPaused = wasPaused;
-      process.stdin.setRawMode(true); // Re-enable raw mode after readline
-      process.stdin.resume(); // Resume stdin
+      process.stdin.setRawMode(true);
+      process.stdin.resume();
     };
 
     switch (answer) {
@@ -192,11 +224,10 @@ function showConfigMenu(): void {
   });
 }
 
-// Cursor management
 cliCursor.hide();
 
-// Cleanup handlers
 function cleanup(): void {
+  stopCountdown();
   if (currentRL) {
     currentRL.close();
     currentRL = null;
@@ -215,11 +246,6 @@ process.on("SIGTERM", () => {
   process.exit();
 });
 
-// Initialize timer
-const { pomodoro } = loadConfig();
-let secondsLeft = pomodoro;
-
-// Keypress listener
 readline.emitKeypressEvents(process.stdin);
 process.stdin.setRawMode(true);
 
@@ -241,24 +267,5 @@ process.stdin.on("keypress", (str, key) => {
   }
 });
 
-// Countdown logic
-const countdownInterval = setInterval(() => {
-  if (!isPaused && !inConfigMenu) {
-    displayCountdown(secondsLeft, isPaused);
-    secondsLeft -= 1;
-
-    if (secondsLeft < 0) {
-      clearInterval(countdownInterval);
-      playAudio();
-      console.log(chalk.green("\n🎉 Time's up!"));
-      showTimeUpPopup()
-        .then(() => process.exit())
-        .catch((err) => {
-          console.error(chalk.red("Popup error:"), err);
-          process.exit(1);
-        });
-    }
-  }
-}, 1000);
-
-displayCountdown(secondsLeft, isPaused);
+// Initialize timer
+startCountdown(loadConfig().pomodoro);
