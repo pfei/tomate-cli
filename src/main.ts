@@ -10,6 +10,8 @@ import readline from "readline";
 import { loadConfig, saveConfig } from "./utils/config.js";
 import { displayError } from "./utils/errors.js";
 import { getState, updateState, resetState, advanceCycle } from "./core/state.js";
+import { argv } from "node:process";
+import { resetConfig } from "./utils/config.js";
 
 // Load environment variables
 dotenv.config();
@@ -321,5 +323,9 @@ process.stdin.on("keypress", (str, key) => {
   }
 });
 
-// Initialize timer
-startCountdown(loadConfig().pomodoro);
+if (argv.includes("--reset-config")) {
+  resetConfig().then(() => process.exit(0));
+} else {
+  // Initialize timer
+  startCountdown(loadConfig().pomodoro);
+}

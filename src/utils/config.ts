@@ -66,3 +66,16 @@ export function saveConfig(newConfig: Partial<Config>): boolean {
     return false;
   }
 }
+
+export async function resetConfig(): Promise<void> {
+  try {
+    const dir = join(CONFIG_DIR, "tomate-cli");
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
+    }
+    writeFileSync(CONFIG_PATH, JSON.stringify(DEFAULT_CONFIG, null, 2));
+    console.log(chalk.green("✓ Configuration reset successfully!"));
+  } catch (error) {
+    displayError("Error resetting config", error);
+  }
+}

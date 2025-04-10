@@ -9,7 +9,8 @@
     "build": "tsc && copyfiles -u 1 \"src/assets/**/*.{mp3,wav}\" dist",
     "start": "node ./dist/main.js",
     "clean": "rm -rf dist",
-    "dev": "npm run clean && npm run build && npm run start"
+    "dev": "npm run clean && npm run build && npm run start",
+    "reset-config": "node ./dist/main.js --reset-config"
   },
   "engines": {
     "node": ">=18.0.0"
