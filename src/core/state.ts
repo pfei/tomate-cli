@@ -1,40 +1,45 @@
 import { loadConfig } from "../utils/config.js";
+import { TimerState } from "../types.js";
 
-interface TimerState {
-  isPaused: boolean;
-  inConfigMenu: boolean;
-  currentMode: "pomodoro" | "shortBreak" | "longBreak";
-  currentCycle: number;
-  secondsLeft: number;
+// Lazy initialization pattern
+let _state: TimerState | null = null;
+
+function getOrCreateState(): TimerState {
+  if (!_state) {
+    _state = {
+      isPaused: false,
+      inConfigMenu: false,
+      currentMode: "pomodoro",
+      currentCycle: 0,
+      secondsLeft: 0,
+      config: loadConfig(),
+    };
+  }
+  return _state;
 }
 
-let state: TimerState = {
-  isPaused: false,
-  inConfigMenu: false,
-  currentMode: "pomodoro",
-  currentCycle: 0,
-  secondsLeft: 0,
-};
-
 export function getState(): TimerState {
-  return state;
+  return getOrCreateState();
 }
 
 export function updateState(partial: Partial<TimerState>): void {
-  state = { ...state, ...partial };
+  _state = { ...getOrCreateState(), ...partial };
 }
 
 export function resetState(): void {
-  state = {
-    ...state,
+  const config = getState().config; // Use current config
+  _state = {
+    ...getOrCreateState(),
     currentMode: "pomodoro",
     currentCycle: 0,
-    secondsLeft: loadConfig().pomodoro,
+    secondsLeft: config.pomodoro, // Use config from state
   };
 }
 
 export function advanceCycle(): void {
-  const newState = { ...state };
+  const currentState = getOrCreateState();
+  const newState = { ...currentState };
+  const config = currentState.config; // Use config from state
 
   if (newState.currentMode === "pomodoro") {
     newState.currentCycle++;
@@ -43,8 +48,6 @@ export function advanceCycle(): void {
     newState.currentMode = "pomodoro";
   }
 
-  const config = loadConfig();
   newState.secondsLeft = config[newState.currentMode];
-
-  state = newState;
+  _state = newState;
 }

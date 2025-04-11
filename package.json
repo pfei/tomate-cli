@@ -10,7 +10,8 @@
     "start": "node ./dist/main.js",
     "clean": "rm -rf dist",
     "dev": "npm run clean && npm run build && npm run start",
-    "reset-config": "node ./dist/main.js --reset-config"
+    "reset-config": "node ./dist/main.js --reset-config",
+    "test": "node ./dist/test-state.js"
   },
   "engines": {
     "node": ">=18.0.0"
