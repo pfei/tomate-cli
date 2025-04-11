@@ -7,41 +7,19 @@ import boxen from "boxen";
 import cliCursor from "cli-cursor";
 import dotenv from "dotenv";
 import readline from "readline";
-import { loadConfig, saveConfig } from "./utils/config.js";
+import { loadConfig, NumericConfigKey, saveConfig } from "./utils/config.js";
 import { displayError } from "./utils/errors.js";
 import { getState, updateState, resetState, advanceCycle } from "./core/state.js";
 import { argv } from "node:process";
 import { resetConfig } from "./utils/config.js";
+import { playSound } from "./utils/sound.js";
 
 // Load environment variables
 dotenv.config();
 
-const audioPath = fileURLToPath(new URL("audio.mp3", new URL("./assets/", import.meta.url)));
-
-if (!existsSync(audioPath)) {
-  throw new Error(`Audio file not found: ${audioPath.replace(process.cwd(), ".")}`);
-}
-
-// State management
-// let inConfigMenu = false;
-// let isPaused = false;
-// let secondsLeft = loadConfig().pomodoro;
-
 let firstRender = true;
 let currentRL: readline.Interface | null = null;
 let countdownInterval: NodeJS.Timeout | null = null;
-
-function playAudio(): void {
-  const ffplayProcess = spawn("ffplay", ["-nodisp", "-autoexit", "-loglevel", "quiet", audioPath], {
-    detached: true,
-    stdio: "ignore",
-  });
-
-  ffplayProcess
-    .on("error", (err) => console.error("🎵 Playback failed:", err))
-    .on("exit", (code) => code && console.error("Playback stopped with code:", code))
-    .unref();
-}
 
 function formatTime(secondsLeft: number): string {
   const hours = Math.floor(secondsLeft / 3600);
@@ -56,37 +34,6 @@ function formatTime(secondsLeft: number): string {
     chalk.cyan(seconds.toString().padStart(2, "0")),
   ].join("");
 }
-
-// function displayCountdown(secondsLeft: number, isPaused: boolean): void {
-//   if (getState().inConfigMenu) return;
-
-//   const modeDisplay = {
-//     pomodoro: "🍅 Pomodoro",
-//     shortBreak: "☕ Short Break",
-//     longBreak: "🌴 Long Break",
-//   }[getState().currentMode];
-
-//   const timeString = formatTime(secondsLeft);
-//   const pauseMessage = isPaused ? chalk.red("[PAUSED]") : "";
-
-//   const boxedTime = boxen(
-//     `${modeDisplay} ${timeString} ${pauseMessage}\n\n` + `[p]ause   [q]uit   [c]onfig`,
-//     {
-//       padding: 1,
-//       borderColor: "cyan",
-//       borderStyle: "round",
-//       titleAlignment: "center",
-//     },
-//   );
-
-//   if (firstRender) {
-//     process.stdout.write(boxedTime + "\n");
-//     firstRender = false;
-//   } else {
-//     // process.stdout.write("\x1B[7A\x1B[0J" + boxedTime + "\n");
-//     process.stdout.write("\x1B[2J\x1B[3J\x1B[H" + boxedTime + "\n");
-//   }
-// }
 
 function displayCountdown(secondsLeft: number, isPaused: boolean): void {
   if (getState().inConfigMenu) return;
@@ -171,7 +118,8 @@ function startCountdown(initialSeconds: number): void {
 
       if (getState().secondsLeft < 0) {
         stopCountdown();
-        playAudio();
+        // playAudio();
+        playSound(getState().currentMode === "pomodoro" ? "pomodoro" : "break");
         console.log(chalk.green("\n🎉 Time's up!"));
         showTimeUpPopup()
           .then(() => {
@@ -226,7 +174,7 @@ function showConfigMenu(): void {
   );
 
   rl.question(chalk.cyan("Choose an option: "), (answer) => {
-    const handleInput = (prompt: string, property: keyof typeof config) => {
+    const handleInput = (prompt: string, property: NumericConfigKey) => {
       rl.question(chalk.cyan(prompt), (value) => {
         const secs = parseInt(value, 10);
         if (!isNaN(secs) && secs > 0) {
