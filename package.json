@@ -1,6 +1,6 @@
 {
   "name": "tomate-cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A simple CLI pomodoro app",
   "type": "module",
   "main": "./dist/main.js",
@@ -26,7 +26,8 @@
   "author": "Pierre Feilles <pierre.feilles@gmail.com>",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^22.13.13",
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^22.14.1",
     "copyfiles": "^2.4.1",
     "typescript": "^5.8.2",
     "vitest": "^3.1.1"
@@ -36,6 +37,7 @@
     "chalk": "^5.4.1",
     "cli-cursor": "^5.0.0",
     "dotenv": "^16.4.7",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "zod": "^3.24.3"
   }
 }
