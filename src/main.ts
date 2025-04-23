@@ -36,13 +36,14 @@ function formatTime(secondsLeft: number): string {
 }
 
 function displayCountdown(secondsLeft: number, isPaused: boolean): void {
-  if (getState().inConfigMenu) return;
+  const state = getState();
+  if (state.inConfigMenu) return;
 
   const modeDisplay = {
     pomodoro: "🍅 Pomodoro",
     shortBreak: "☕ Short Break",
     longBreak: "🌴 Long Break",
-  }[getState().currentMode];
+  }[state.currentMode];
 
   const timeString = formatTime(secondsLeft);
   const pauseMessage = isPaused ? chalk.red("[PAUSED]") : "";
@@ -271,9 +272,19 @@ process.stdin.on("keypress", (str, key) => {
   }
 });
 
-if (argv.includes("--reset-config")) {
-  resetConfig().then(() => process.exit(0));
-} else {
-  // Initialize timer
-  startCountdown(loadConfig().pomodoro);
+function main() {
+  if (argv.includes("--reset-config")) {
+    resetConfig();
+    process.exit(0);
+  } else {
+    try {
+      const config = loadConfig();
+      startCountdown(config.pomodoro);
+    } catch (err) {
+      displayError("Failed to initialize", err);
+      process.exit(1);
+    }
+  }
 }
+
+main();
