@@ -26,7 +26,6 @@
   "author": "Pierre Feilles <pierre.feilles@gmail.com>",
   "license": "ISC",
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.14.1",
     "copyfiles": "^2.4.1",
     "typescript": "^5.8.2",
