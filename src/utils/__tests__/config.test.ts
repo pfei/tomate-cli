@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import * as fs from "node:fs";
-import { saveConfig, loadConfig, DEFAULT_CONFIG, CONFIG_PATH } from "../config.js";
+import { saveConfig, loadConfig, DEFAULT_CONFIG, CONFIG_PATH, resetConfig } from "../config.js";
 import * as errors from "../errors.js";
 import * as state from "../../core/state.js";
 import { TextDecoder } from "node:util";
@@ -284,5 +284,55 @@ describe("saveConfig()", () => {
 
     expect(writtenConfig).not.toHaveProperty("extraKey");
     expect(writtenConfig.pomodoro).toBe(2000);
+  });
+});
+
+describe("resetConfig()", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  it("should write DEFAULT_CONFIG to file when directory exists", () => {
+    const writeSpy = vi.spyOn(fs, "writeFileSync");
+    const existsSyncSpy = vi.spyOn(fs, "existsSync");
+    existsSyncSpy.mockReturnValue(true); // Simulate directory existing
+
+    const mkdirSyncSpy = vi.spyOn(fs, "mkdirSync");
+
+    resetConfig();
+
+    expect(existsSyncSpy).toHaveBeenCalledWith(expect.any(String));
+    expect(mkdirSyncSpy).not.toHaveBeenCalled();
+
+    expect(writeSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      JSON.stringify(DEFAULT_CONFIG, null, 2),
+    );
+  });
+
+  it("should create config directory if it does not exist", () => {
+    const writeSpy = vi.spyOn(fs, "writeFileSync");
+    const existsSyncSpy = vi.spyOn(fs, "existsSync");
+    existsSyncSpy.mockReturnValue(false);
+    const mkdirSyncSpy = vi.spyOn(fs, "mkdirSync");
+
+    resetConfig();
+
+    expect(existsSyncSpy).toHaveBeenCalledWith(expect.any(String));
+    expect(mkdirSyncSpy).toHaveBeenCalledWith(expect.any(String), { recursive: true });
+    expect(writeSpy).toHaveBeenCalledWith(
+      expect.any(String),
+      JSON.stringify(DEFAULT_CONFIG, null, 2),
+    );
+  });
+
+  it("should call displayError on unexpected error", () => {
+    vi.mocked(fs.writeFileSync).mockImplementation(() => {
+      throw new Error("Disk error");
+    });
+    const errorSpy = vi.spyOn(errors, "displayError").mockImplementation(() => {});
+
+    resetConfig();
+    expect(errorSpy).toHaveBeenCalledWith("Error resetting config", expect.any(Error));
   });
 });
