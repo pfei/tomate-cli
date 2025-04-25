@@ -7,7 +7,7 @@ import { displayError } from "./errors.js";
 import { getState } from "../core/state.js";
 
 const CONFIG_DIR = process.env.XDG_CONFIG_HOME || join(homedir(), ".config");
-const CONFIG_PATH = join(CONFIG_DIR, "tomate-cli", "config.json");
+export const CONFIG_PATH = join(CONFIG_DIR, "tomate-cli", "config.json");
 
 type DeepPartial<T> = T extends Function
   ? T
@@ -127,6 +127,7 @@ export function saveConfig(newConfig: Partial<Config>): boolean {
       mkdirSync(configDir, { recursive: true });
     }
     writeFileSync(CONFIG_PATH, JSON.stringify(updatedConfig, null, 2));
+
     getState().config = updatedConfig;
     return true;
   } catch (error) {
