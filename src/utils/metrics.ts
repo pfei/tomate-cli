@@ -58,3 +58,22 @@ export function recordSession(session: Omit<PomodoroSession, "end"> & { end?: st
 export function resetMetrics(): void {
   saveMetrics(DEFAULT_METRICS);
 }
+
+export function getMetricsStats() {
+  const metrics = loadMetrics();
+  const totalPomodoros = metrics.sessions.filter((s) => s.type === "pomodoro").length;
+  const totalShortBreaks = metrics.sessions.filter((s) => s.type === "shortBreak").length;
+  const totalLongBreaks = metrics.sessions.filter((s) => s.type === "longBreak").length;
+  const totalPomodoroTimeSeconds = metrics.sessions
+    .filter((s) => s.type === "pomodoro")
+    .reduce((sum, s) => {
+      return sum + (new Date(s.end).getTime() - new Date(s.start).getTime()) / 1000;
+    }, 0);
+
+  return {
+    totalPomodoros,
+    totalShortBreaks,
+    totalLongBreaks,
+    totalPomodoroTimeSeconds,
+  };
+}
