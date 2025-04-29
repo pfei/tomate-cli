@@ -23,5 +23,6 @@ Thumbs.db
 
 # Temporary files
 *.tmp
-
 tmp-doc
+combine-file.sh
+codebase-report.txt
