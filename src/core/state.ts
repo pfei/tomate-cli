@@ -1,5 +1,6 @@
 import { loadConfig } from "../utils/config.js";
 import { TimerState } from "../types.js";
+import { recordSession } from "../utils/metrics.js";
 
 // Lazy initialization pattern
 let _state: TimerState | null = null;
@@ -40,6 +41,17 @@ export function advanceCycle(): void {
   const currentState = getOrCreateState();
   const newState = { ...currentState };
   const config = currentState.config; // Use config from state
+
+  // Record the completed session
+  const sessionType = currentState.currentMode;
+  const sessionDuration = config[sessionType] * 1000;
+  const endTime = new Date();
+  const startTime = new Date(endTime.getTime() - sessionDuration);
+  recordSession({
+    start: startTime.toISOString(),
+    end: endTime.toISOString(),
+    type: sessionType,
+  });
 
   if (newState.currentMode === "pomodoro") {
     newState.currentCycle++;
