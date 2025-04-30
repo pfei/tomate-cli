@@ -22,6 +22,26 @@ export type Metrics = z.infer<typeof MetricsSchema>;
 
 export const DEFAULT_METRICS: Metrics = { sessions: [] };
 
+export type SessionType = "pomodoro" | "shortBreak" | "longBreak";
+export type Session = { type: SessionType; start: string; end: string };
+
+export function avgDuration(type: SessionType, sessions: Session[]): number {
+  const filtered = sessions.filter((s) => s.type === type);
+  if (filtered.length === 0) return 0;
+  const totalTime = filtered.reduce((sum, s) => {
+    return sum + (new Date(s.end).getTime() - new Date(s.start).getTime()) / 1000;
+  }, 0);
+  return totalTime / filtered.length;
+}
+
+export function totalDuration(type: SessionType, sessions: Session[]): number {
+  return sessions
+    .filter((s) => s.type === type)
+    .reduce((sum, s) => {
+      return sum + (new Date(s.end).getTime() - new Date(s.start).getTime()) / 1000;
+    }, 0);
+}
+
 export function loadMetrics(): Metrics {
   try {
     if (!existsSync(METRICS_PATH)) return DEFAULT_METRICS;
