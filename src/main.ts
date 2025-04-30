@@ -13,7 +13,8 @@ import { getState, updateState, resetState, advanceCycle } from "./core/state.js
 import { argv } from "node:process";
 import { resetConfig } from "./utils/config.js";
 import { playSound } from "./utils/sound.js";
-import { resetMetrics, getMetricsStats, loadMetrics } from "./utils/metrics.js";
+import { displayStatsBox } from "./ui/statsDisplay.js";
+import { formatTime } from "./utils/timeFormat.js";
 
 // Load environment variables
 dotenv.config();
@@ -21,20 +22,6 @@ dotenv.config();
 let firstRender = true;
 let currentRL: readline.Interface | null = null;
 let countdownInterval: NodeJS.Timeout | null = null;
-
-function formatTime(secondsLeft: number): string {
-  const hours = Math.floor(secondsLeft / 3600);
-  const minutes = Math.floor((secondsLeft % 3600) / 60);
-  const seconds = secondsLeft % 60;
-
-  return [
-    chalk.cyan(hours.toString().padStart(2, "0")),
-    chalk.yellow(":"),
-    chalk.cyan(minutes.toString().padStart(2, "0")),
-    chalk.yellow(":"),
-    chalk.cyan(seconds.toString().padStart(2, "0")),
-  ].join("");
-}
 
 function displayCountdown(secondsLeft: number, isPaused: boolean): void {
   const state = getState();
@@ -272,75 +259,6 @@ process.stdin.on("keypress", (str, key) => {
     process.exit();
   }
 });
-
-function formatSecondsAsHMS(totalSeconds: number): string {
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  return [hours, minutes, seconds].map((unit) => String(unit).padStart(2, "0")).join(":");
-}
-
-function formatMinSec(totalSeconds: number): string {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = Math.floor(totalSeconds % 60);
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
-function displayStatsBox() {
-  const stats = getMetricsStats();
-  const metrics = loadMetrics();
-
-  // Helper to calculate average duration for a given type
-  function avgDuration(type: "pomodoro" | "shortBreak" | "longBreak"): number {
-    const sessions = metrics.sessions.filter((s) => s.type === type);
-    if (sessions.length === 0) return 0;
-    const totalTime = sessions.reduce((sum, s) => {
-      return sum + (new Date(s.end).getTime() - new Date(s.start).getTime()) / 1000;
-    }, 0);
-    return totalTime / sessions.length;
-  }
-
-  // Helper to calculate total duration for a given type
-  function totalDuration(type: "pomodoro" | "shortBreak" | "longBreak"): number {
-    return metrics.sessions
-      .filter((s) => s.type === type)
-      .reduce((sum, s) => {
-        return sum + (new Date(s.end).getTime() - new Date(s.start).getTime()) / 1000;
-      }, 0);
-  }
-
-  const avgPomodoroSeconds = avgDuration("pomodoro");
-  const avgShortBreakSeconds = avgDuration("shortBreak");
-  const avgLongBreakSeconds = avgDuration("longBreak");
-
-  const totalBreaksSeconds = totalDuration("shortBreak") + totalDuration("longBreak");
-
-  const content =
-    chalk.cyan(`Total Pomodoros: ${stats.totalPomodoros}\n`) +
-    chalk.cyan(`Total Pomodoro Time: ${formatSecondsAsHMS(stats.totalPomodoroTimeSeconds)}\n\n`) +
-    (stats.totalPomodoros
-      ? `Average Pomodoro Duration: ${formatMinSec(avgPomodoroSeconds)}\n`
-      : "") +
-    `Total Breaks Time: ${formatSecondsAsHMS(totalBreaksSeconds)}\n` +
-    `Short Breaks: ${stats.totalShortBreaks}\n` +
-    (stats.totalShortBreaks
-      ? `Average Short Break Duration: ${formatMinSec(avgShortBreakSeconds)}\n`
-      : "") +
-    `Long Breaks: ${stats.totalLongBreaks}\n` +
-    (stats.totalLongBreaks
-      ? `Average Long Break Duration: ${formatMinSec(avgLongBreakSeconds)}\n`
-      : "");
-  const boxedOutput = boxen(content, {
-    padding: 1,
-    borderColor: "cyan",
-    borderStyle: "round",
-    title: "📊 Pomodoro Statistics",
-    titleAlignment: "center",
-    margin: { top: 1, bottom: 1 },
-  });
-
-  console.log(boxedOutput);
-}
 
 function main() {
   if (argv.includes("--reset-config")) {
