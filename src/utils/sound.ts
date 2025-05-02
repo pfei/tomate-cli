@@ -1,8 +1,7 @@
 import { spawn } from "node:child_process";
 import chalk from "chalk";
-import { getState } from "../core/state.js";
 
-export function playSound(soundType: "pomodoro" | "break"): void {
+export function playSound(soundType: "pomodoro" | "break", getState: () => any): void {
   //   const config = getState().config;
   //   const soundPath = soundType === "pomodoro" ? config.sound.pomodoroEnd : config.sound.breakEnd;
 

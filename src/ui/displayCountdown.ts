@@ -1,19 +1,26 @@
 import boxen from "boxen";
 import chalk from "chalk";
 import { formatTime } from "../utils/timeFormat.js";
-import { getState } from "../core/state.js";
 
 let firstRender = true;
 
-export function displayCountdown(secondsLeft: number, isPaused: boolean): void {
+type Mode = "pomodoro" | "shortBreak" | "longBreak";
+const modeDisplayMap: Record<Mode, string> = {
+  pomodoro: "🍅 Pomodoro",
+  shortBreak: "☕ Short Break",
+  longBreak: "🌴 Long Break",
+};
+
+export function displayCountdown(
+  secondsLeft: number,
+  isPaused: boolean,
+  getState: () => any,
+): void {
   const state = getState();
   if (state.inConfigMenu) return;
 
-  const modeDisplay = {
-    pomodoro: "🍅 Pomodoro",
-    shortBreak: "☕ Short Break",
-    longBreak: "🌴 Long Break",
-  }[state.currentMode];
+  const mode = state.currentMode as Mode;
+  const modeDisplay = modeDisplayMap[mode];
 
   const timeString = formatTime(secondsLeft);
   const pauseMessage = isPaused ? chalk.red("[PAUSED]") : "";

@@ -1,11 +1,7 @@
 import { z } from "zod";
-import { join } from "node:path";
-import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { displayError } from "./errors.js";
-
-const CONFIG_DIR = process.env.XDG_CONFIG_HOME || join(homedir(), ".config");
-const METRICS_PATH = join(CONFIG_DIR, "tomate-cli", "metrics.json");
 
 const SessionSchema = z.object({
   start: z.string().datetime(),
@@ -42,10 +38,10 @@ export function totalDuration(type: SessionType, sessions: Session[]): number {
     }, 0);
 }
 
-export function loadMetrics(): Metrics {
+export function loadMetrics(metricsPath: string): Metrics {
   try {
-    if (!existsSync(METRICS_PATH)) return DEFAULT_METRICS;
-    const data = JSON.parse(readFileSync(METRICS_PATH, "utf-8"));
+    if (!existsSync(metricsPath)) return DEFAULT_METRICS;
+    const data = JSON.parse(readFileSync(metricsPath, "utf-8"));
     return MetricsSchema.parse(data);
   } catch (error) {
     displayError("Failed to load metrics", error);
@@ -53,34 +49,37 @@ export function loadMetrics(): Metrics {
   }
 }
 
-export function saveMetrics(metrics: Metrics): void {
+export function saveMetrics(metrics: Metrics, metricsPath: string): void {
   try {
     const validated = MetricsSchema.parse(metrics);
-    const configDir = join(CONFIG_DIR, "tomate-cli");
+    const configDir = dirname(metricsPath);
     if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true });
-    writeFileSync(METRICS_PATH, JSON.stringify(validated, null, 2));
+    writeFileSync(metricsPath, JSON.stringify(validated, null, 2));
   } catch (error) {
     displayError("Failed to save metrics", error);
   }
 }
 
-export function recordSession(session: Omit<PomodoroSession, "end"> & { end?: string }): void {
-  const metrics = loadMetrics();
+export function recordSession(
+  session: Omit<PomodoroSession, "end"> & { end?: string },
+  metricsPath: string,
+): void {
+  const metrics = loadMetrics(metricsPath);
   const completeSession = {
     ...session,
     end: session.end || new Date().toISOString(),
   };
   const parsedSession = SessionSchema.parse(completeSession);
   metrics.sessions.push(parsedSession as PomodoroSession);
-  saveMetrics(metrics);
+  saveMetrics(metrics, metricsPath);
 }
 
-export function resetMetrics(): void {
-  saveMetrics(DEFAULT_METRICS);
+export function resetMetrics(metricsPath: string): void {
+  saveMetrics(DEFAULT_METRICS, metricsPath);
 }
 
-export function getMetricsStats() {
-  const metrics = loadMetrics();
+export function getMetricsStats(metricsPath: string) {
+  const metrics = loadMetrics(metricsPath);
   const totalPomodoros = metrics.sessions.filter((s) => s.type === "pomodoro").length;
   const totalShortBreaks = metrics.sessions.filter((s) => s.type === "shortBreak").length;
   const totalLongBreaks = metrics.sessions.filter((s) => s.type === "longBreak").length;

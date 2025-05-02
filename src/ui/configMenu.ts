@@ -2,7 +2,6 @@ import readline from "readline";
 import chalk from "chalk";
 import boxen from "boxen";
 import { loadConfig, saveConfig, NumericConfigKey } from "../utils/config.js";
-import { updateState, getState } from "../core/state.js";
 import { formatTime } from "../utils/timeFormat.js";
 import { displayCountdown } from "./displayCountdown.js";
 
@@ -19,11 +18,19 @@ export function cleanupConfigMenu(): void {
   }
 }
 
-export function showConfigMenu(): void {
+export function showConfigMenu({
+  configPath,
+  getState,
+  updateState,
+}: {
+  configPath: string;
+  getState: () => any;
+  updateState: (partial: any) => void;
+}): void {
   const wasPaused = getState().isPaused;
   updateState({ isPaused: true });
   updateState({ inConfigMenu: true });
-  const config = loadConfig();
+  const config = loadConfig(configPath);
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -56,7 +63,7 @@ export function showConfigMenu(): void {
         const secs = parseInt(value, 10);
         if (!isNaN(secs) && secs > 0) {
           config[property] = secs;
-          saveConfig(config);
+          saveConfig(config, configPath);
           console.log(
             chalk.green(`✅ Updated ${property.replace(/([A-Z])/g, " $1").toLowerCase()}`),
           );
@@ -68,7 +75,7 @@ export function showConfigMenu(): void {
         }
         cleanupReadline();
         process.stdout.write("\x1B[2J\x1B[0f");
-        displayCountdown(getState().secondsLeft, wasPaused);
+        displayCountdown(getState().secondsLeft, wasPaused, getState());
       });
     };
 
@@ -94,13 +101,13 @@ export function showConfigMenu(): void {
       case "q":
         cleanupReadline();
         process.stdout.write("\x1B[2J\x1B[0f");
-        displayCountdown(getState().secondsLeft, wasPaused);
+        displayCountdown(getState().secondsLeft, wasPaused, getState);
         break;
       default:
         console.log(chalk.red("⚠ Invalid option"));
         cleanupReadline();
         process.stdout.write("\x1B[2J\x1B[0f");
-        displayCountdown(getState().secondsLeft, wasPaused);
+        displayCountdown(getState().secondsLeft, wasPaused, getState);
     }
   });
 }

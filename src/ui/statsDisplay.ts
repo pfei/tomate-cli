@@ -1,12 +1,12 @@
 import chalk from "chalk";
 import boxen from "boxen";
-import { resetMetrics, getMetricsStats, loadMetrics } from "../utils/metrics.js";
 import { formatSecondsAsHMS, formatMinSec } from "../utils/timeFormat.js";
 import { avgDuration, totalDuration } from "../utils/metrics.js";
+import { loadMetrics, getMetricsStats } from "../utils/metrics.js";
 
-export function displayStatsBox() {
-  const stats = getMetricsStats();
-  const metrics = loadMetrics();
+export function displayStatsBox(metricsPath: string) {
+  const stats = getMetricsStats(metricsPath);
+  const metrics = loadMetrics(metricsPath);
 
   const avgPomodoroSeconds = avgDuration("pomodoro", metrics.sessions);
   const avgShortBreakSeconds = avgDuration("shortBreak", metrics.sessions);

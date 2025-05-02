@@ -1,13 +1,9 @@
 import { z } from "zod";
-import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname } from "node:path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import chalk from "chalk";
 import { displayError } from "./errors.js";
-import { getState } from "../core/state.js";
-
-const CONFIG_DIR = process.env.XDG_CONFIG_HOME || join(homedir(), ".config");
-export const CONFIG_PATH = join(CONFIG_DIR, "tomate-cli", "config.json");
+// import { getState } from "../core/state.js";
 
 type DeepPartial<T> = T extends Function
   ? T
@@ -85,11 +81,11 @@ function deepCopy<T>(obj: T): T {
   return newObj as T;
 }
 
-export function loadConfig(): Config {
+export function loadConfig(configPath: string): Config {
   try {
-    if (!existsSync(CONFIG_PATH)) return DEFAULT_CONFIG;
+    if (!existsSync(configPath)) return DEFAULT_CONFIG;
 
-    const config = JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
+    const config = JSON.parse(readFileSync(configPath, "utf-8"));
     const mergedConfig: Config = deepMerge(config, DEFAULT_CONFIG);
     const result = ConfigSchema.safeParse(mergedConfig); // Zod validation
 
@@ -111,10 +107,10 @@ export function loadConfig(): Config {
   }
 }
 
-export function saveConfig(newConfig: Partial<Config>): boolean {
+export function saveConfig(newConfig: Partial<Config>, configPath: string): boolean {
   try {
-    const currentConfig = existsSync(CONFIG_PATH)
-      ? JSON.parse(readFileSync(CONFIG_PATH, "utf-8"))
+    const currentConfig = existsSync(configPath)
+      ? JSON.parse(readFileSync(configPath, "utf-8"))
       : DEFAULT_CONFIG;
 
     const updatedConfig = ConfigSchema.parse({
@@ -122,13 +118,15 @@ export function saveConfig(newConfig: Partial<Config>): boolean {
       ...newConfig,
     });
 
-    const configDir = join(CONFIG_DIR, "tomate-cli");
+    const configDir = dirname(configPath);
     if (!existsSync(configDir)) {
       mkdirSync(configDir, { recursive: true });
     }
-    writeFileSync(CONFIG_PATH, JSON.stringify(updatedConfig, null, 2));
+    writeFileSync(configPath, JSON.stringify(updatedConfig, null, 2));
 
-    getState().config = updatedConfig;
+    // getState().config = updatedConfig;
+    // No more getState().config = updatedConfig; -- handled by caller if needed
+
     return true;
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -142,13 +140,13 @@ export function saveConfig(newConfig: Partial<Config>): boolean {
   }
 }
 
-export function resetConfig(): void {
+export function resetConfig(configPath: string): void {
   try {
-    const dir = join(CONFIG_DIR, "tomate-cli");
+    const dir = dirname(configPath);
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
     }
-    writeFileSync(CONFIG_PATH, JSON.stringify(DEFAULT_CONFIG, null, 2));
+    writeFileSync(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
     console.log(chalk.green("✓ Configuration reset successfully!"));
   } catch (error) {
     displayError("Error resetting config", error);
