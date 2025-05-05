@@ -20,6 +20,7 @@ import { showConfigMenu, cleanupConfigMenu } from "./ui/configMenu.js";
 import { showTimeUpPopup } from "./ui/notifications.js";
 import { resolveConfigPath, resolveMetricsPath } from "./utils/resolvePaths.js";
 import { createState } from "./core/state.js";
+import { displayHelp } from "./ui/displayHelp.js";
 
 ////////////////////////////////////////////////////
 // --- Load environment variables from .env ---
@@ -107,6 +108,11 @@ if (argv.includes("--set-metrics-path")) {
     console.error("Please provide a path after --set-metrics-path");
     process.exit(1);
   }
+}
+
+if (argv.includes("--help")) {
+  displayHelp();
+  process.exit(0);
 }
 // < early exit CLI flags
 
