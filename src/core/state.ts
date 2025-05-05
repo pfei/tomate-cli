@@ -1,6 +1,15 @@
 import { loadConfig } from "../utils/config.js";
-import { TimerState } from "../types.js";
 import { recordSession } from "../utils/metrics.js";
+import { Config } from "../utils/config.js";
+
+export interface TimerState {
+  isPaused: boolean;
+  inConfigMenu: boolean;
+  currentMode: "pomodoro" | "shortBreak" | "longBreak";
+  currentCycle: number;
+  secondsLeft: number;
+  config: Config;
+}
 
 export function createState(configPath: string, metricsPath: string) {
   let _state: TimerState | null = null;
