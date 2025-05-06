@@ -1,7 +1,5 @@
 import { describe, it, beforeEach, expect, vi } from "vitest";
 import { createState } from "../state.js";
-import { loadConfig } from "../../utils/config.js";
-import { recordSession } from "../../utils/metrics.js";
 
 // Mock config and metrics paths
 const mockConfigPath = "/tmp/test-config.json";
@@ -95,7 +93,7 @@ describe("state module", () => {
     it("advances to shortBreak after pomodoro", () => {
       resetState();
       advanceCycle();
-      let s = getState();
+      const s = getState();
       expect(s.currentMode).toBe("shortBreak");
       expect(s.secondsLeft).toBe(mockConfig.shortBreak);
       expect(s.currentCycle).toBe(1);
@@ -106,7 +104,7 @@ describe("state module", () => {
       advanceCycle(); // pomodoro -> shortBreak (cycle = 1)
       updateState({ currentMode: "shortBreak" });
       advanceCycle(); // shortBreak -> pomodoro (cycle should remain 1)
-      let s = getState();
+      const s = getState();
       expect(s.currentMode).toBe("pomodoro");
       expect(s.secondsLeft).toBe(mockConfig.pomodoro);
       expect(s.currentCycle).toBe(1);
@@ -115,7 +113,7 @@ describe("state module", () => {
     it("advances to longBreak after 4 pomodoro cycles", () => {
       updateState({ currentCycle: 3, currentMode: "pomodoro" });
       advanceCycle();
-      let s = getState();
+      const s = getState();
       expect(s.currentMode).toBe("longBreak");
       expect(s.secondsLeft).toBe(mockConfig.longBreak);
       expect(s.currentCycle).toBe(4);

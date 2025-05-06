@@ -1,6 +1,7 @@
 import boxen from "boxen";
 import chalk from "chalk";
 import { formatTime } from "../utils/timeFormat.js";
+import { TimerState } from "../core/state.js";
 
 let firstRender = true;
 
@@ -14,7 +15,7 @@ const modeDisplayMap: Record<Mode, string> = {
 export function displayCountdown(
   secondsLeft: number,
   isPaused: boolean,
-  getState: () => any,
+  getState: () => TimerState,
 ): void {
   const state = getState();
   if (state.inConfigMenu) return;

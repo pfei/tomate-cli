@@ -25,7 +25,11 @@ export function showTimeUpPopup(): Promise<void> {
     });
 
     yadProcess.on("error", reject).on("exit", (code) => {
-      code === 0 ? resolve() : reject(new Error(`Yad exited with code ${code}`));
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`Yad exited with code ${code}`));
+      }
     });
   });
 }

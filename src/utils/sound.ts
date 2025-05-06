@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
 import chalk from "chalk";
+import { TimerState } from "../core/state.js";
 
-export function playSound(soundType: "pomodoro" | "break", getState: () => any): void {
+export function playSound(soundType: "pomodoro" | "break", getState: () => TimerState): void {
   //   const config = getState().config;
   //   const soundPath = soundType === "pomodoro" ? config.sound.pomodoroEnd : config.sound.breakEnd;
 

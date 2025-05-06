@@ -4,6 +4,7 @@ import boxen from "boxen";
 import { loadConfig, saveConfig, NumericConfigKey } from "../utils/config.js";
 import { formatTime } from "../utils/timeFormat.js";
 import { displayCountdown } from "./displayCountdown.js";
+import { TimerState } from "../core/state.js";
 
 let currentRL: readline.Interface | null = null;
 
@@ -24,8 +25,8 @@ export function showConfigMenu({
   updateState,
 }: {
   configPath: string;
-  getState: () => any;
-  updateState: (partial: any) => void;
+  getState: () => TimerState;
+  updateState: (partial: Partial<TimerState>) => void;
 }): void {
   const wasPaused = getState().isPaused;
   updateState({ isPaused: true });
@@ -75,7 +76,7 @@ export function showConfigMenu({
         }
         cleanupReadline();
         process.stdout.write("\x1B[2J\x1B[0f");
-        displayCountdown(getState().secondsLeft, wasPaused, getState());
+        displayCountdown(getState().secondsLeft, wasPaused, getState);
       });
     };
 

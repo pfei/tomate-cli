@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { dirname, join } from "node:path";
+import { dirname } from "node:path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { displayError } from "./errors.js";
 

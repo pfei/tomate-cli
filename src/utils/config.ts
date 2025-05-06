@@ -72,12 +72,12 @@ function deepCopy<T>(obj: T): T {
   }
 
   if (Array.isArray(obj)) {
-    return obj.map((item) => deepCopy(item)) as any as T;
+    return obj.map((item) => deepCopy(item)) as unknown as T;
   }
 
-  const newObj: any = {};
+  const newObj: Record<string, unknown> = {};
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.hasOwn(obj, key)) {
       newObj[key] = deepCopy(obj[key]);
     }
   }
