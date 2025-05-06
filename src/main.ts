@@ -186,15 +186,15 @@ process.stdin.on("keypress", (str, key) => {
     console.log(chalk.yellow("\n👋 Quitting..."));
     cleanup();
     process.exit();
+  } else if (key.ctrl && key.name === "c") {
+    cleanup();
+    process.exit();
   } else if (key.name === "c") {
     showConfigMenu({
       configPath: CONFIG_PATH,
       getState,
       updateState,
     });
-  } else if (key.ctrl && key.name === "c") {
-    cleanup();
-    process.exit();
   }
 });
 
