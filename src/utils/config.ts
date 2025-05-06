@@ -5,13 +5,13 @@ import chalk from "chalk";
 import { displayError } from "./errors.js";
 // import { getState } from "../core/state.js";
 
-type DeepPartial<T> = T extends Function
+type DeepPartial<T> = T extends (...args: unknown[]) => unknown
   ? T
   : T extends Array<infer U>
-  ? Array<DeepPartial<U>>
-  : T extends object
-  ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : T;
+    ? Array<DeepPartial<U>>
+    : T extends object
+      ? { [K in keyof T]?: DeepPartial<T[K]> }
+      : T;
 
 const ConfigSchema = z.object({
   pomodoro: z.number().int().positive(),
@@ -39,23 +39,26 @@ export const DEFAULT_CONFIG: Config = {
   },
 };
 
-function deepMerge<T extends Config>(overrides: DeepPartial<T>, defaults: T): T {
-  function isObject(item: any): boolean {
-    return typeof item === "object" && item !== null && !Array.isArray(item);
-  }
-  const result: T = deepCopy(defaults);
-  for (const key in overrides) {
-    if (overrides.hasOwnProperty(key) && key in defaults) {
-      const overrideValue = overrides[key];
-      const defaultsValue = defaults[key as keyof T];
+function isPlainObject(item: unknown): item is Record<string, unknown> {
+  return typeof item === "object" && item !== null && !Array.isArray(item);
+}
 
-      if (isObject(defaultsValue) && isObject(overrideValue)) {
-        result[key as keyof T] = deepMerge(
-          overrideValue as DeepPartial<typeof defaultsValue>,
-          defaultsValue as any,
-        ) as any;
+function deepMerge<T extends Record<string, unknown>>(overrides: DeepPartial<T>, defaults: T): T {
+  const result: T = deepCopy(defaults);
+
+  for (const key in overrides) {
+    if (Object.hasOwn(overrides, key) && key in defaults) {
+      const overrideValue = overrides[key];
+      const defaultsValue = defaults[key];
+
+      if (isPlainObject(defaultsValue) && isPlainObject(overrideValue)) {
+        // Recursively merge only if both are plain objects
+        result[key] = deepMerge(
+          overrideValue as DeepPartial<Record<string, unknown>>,
+          defaultsValue as Record<string, unknown>,
+        ) as T[typeof key];
       } else {
-        result[key as keyof T] = overrideValue as any;
+        result[key] = overrideValue as T[typeof key];
       }
     }
   }
