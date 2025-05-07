@@ -8,8 +8,8 @@ let firstRender = true;
 type Mode = "pomodoro" | "shortBreak" | "longBreak";
 const modeDisplayMap: Record<Mode, string> = {
   pomodoro: "🍅 Pomodoro",
-  shortBreak: "☕ Short Break",
-  longBreak: "🌴 Long Break",
+  shortBreak: "🌻 Short Break",
+  longBreak: "🌳 Long Break",
 };
 
 export function displayCountdown(

@@ -43,9 +43,9 @@ export function showConfigMenu({
     boxen(
       chalk.green("Configure Pomodoro Timers\n\n") +
         `Current Values:\n` +
-        `🍅 Pomodoro: ${chalk.cyan(formatTime(config.pomodoro))}\n` +
-        `☕ Short Break: ${chalk.cyan(formatTime(config.shortBreak))}\n` +
-        `🌴 Long Break: ${chalk.cyan(formatTime(config.longBreak))}\n\n` +
+        `🍅 Pomodoro:    ${chalk.cyan(formatTime(config.pomodoro))}\n` +
+        `🌻 Short Break: ${chalk.cyan(formatTime(config.shortBreak))}\n` +
+        `🌳 Long Break:  ${chalk.cyan(formatTime(config.longBreak))}\n\n` +
         "[1] Set Pomodoro\n" +
         "[2] Set Short Break\n" +
         "[3] Set Long Break\n" +
@@ -57,7 +57,6 @@ export function showConfigMenu({
       },
     ),
   );
-
   rl.question(chalk.cyan("Choose an option: "), (answer) => {
     const handleInput = (prompt: string, property: NumericConfigKey) => {
       rl.question(chalk.cyan(prompt), (value) => {
