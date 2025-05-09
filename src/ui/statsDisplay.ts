@@ -3,8 +3,24 @@ import boxen from "boxen";
 import { formatSecondsAsHMS, formatMinSec } from "../utils/timeFormat.js";
 import { avgDuration, totalDuration } from "../utils/metrics.js";
 import { loadMetrics, getMetricsStats } from "../utils/metrics.js";
+import { format, parseISO } from "date-fns";
+import type { Session } from "../utils/metrics.js";
 
-import { format, parseISO, differenceInCalendarDays } from "date-fns";
+export function getUniqueDays(sessions: Session[]): Set<string> {
+  return new Set(sessions.map((s) => s.start.slice(0, 10)));
+}
+
+export function getUniqueWeeks(sessions: Session[]): Set<string> {
+  return new Set(sessions.map((s) => format(parseISO(s.start), "yyyy-'W'II")));
+}
+
+export function getDateRange(sessions: Session[]): [string, string] | null {
+  if (!sessions.length) return null;
+  const dates = sessions.map((s) => parseISO(s.start));
+  const min = new Date(Math.min(...dates.map((d) => d.getTime())));
+  const max = new Date(Math.max(...dates.map((d) => d.getTime())));
+  return [min.toISOString().slice(0, 10), max.toISOString().slice(0, 10)];
+}
 
 export function displayStatsBox(metricsPath: string) {
   const stats = getMetricsStats(metricsPath);
@@ -12,15 +28,8 @@ export function displayStatsBox(metricsPath: string) {
 
   const pomodoroSessions = metrics.sessions.filter((s) => s.type === "pomodoro");
 
-  // Gather unique days and weeks
-  const daySet = new Set<string>();
-  const weekSet = new Set<string>();
-  for (const s of pomodoroSessions) {
-    const day = s.start.slice(0, 10);
-    daySet.add(day);
-    const week = format(parseISO(s.start), "yyyy-'W'II");
-    weekSet.add(week);
-  }
+  const daySet = getUniqueDays(pomodoroSessions);
+  const weekSet = getUniqueWeeks(pomodoroSessions);
 
   // Total pomodoro work time in seconds
   const totalPomodoroSeconds = stats.totalPomodoroTimeSeconds;
@@ -29,37 +38,11 @@ export function displayStatsBox(metricsPath: string) {
   const avgDaySeconds = daySet.size ? totalPomodoroSeconds / daySet.size : 0;
   const avgWeekSeconds = weekSet.size ? totalPomodoroSeconds / weekSet.size : 0;
 
-  // Most productive day
-  const pomodorosByDay: Record<string, number> = {};
-  for (const s of pomodoroSessions) {
-    const day = s.start.slice(0, 10);
-    pomodorosByDay[day] = (pomodorosByDay[day] || 0) + 1;
-  }
-  const mostProductiveDay = Object.entries(pomodorosByDay).sort((a, b) => b[1] - a[1])[0];
-
-  // Longest streak
-  const sortedDays = [...daySet].sort();
-  let longestStreak = 0,
-    currentStreak = 0,
-    prevDate: Date | null = null;
-  for (const day of sortedDays) {
-    const date = parseISO(day);
-    if (prevDate && differenceInCalendarDays(date, prevDate) === 1) {
-      currentStreak++;
-    } else {
-      currentStreak = 1;
-    }
-    if (currentStreak > longestStreak) longestStreak = currentStreak;
-    prevDate = date;
-  }
-
   // Date range (from first to last session)
-  const allSessionDates = metrics.sessions.map((s) => parseISO(s.start));
+  const dateRange = getDateRange(metrics.sessions);
   let dateRangeLine = "";
-  if (allSessionDates.length > 0) {
-    const minDate = new Date(Math.min(...allSessionDates.map((d) => d.getTime())));
-    const maxDate = new Date(Math.max(...allSessionDates.map((d) => d.getTime())));
-    dateRangeLine = `From ${minDate.toISOString().slice(0, 10)} to ${maxDate.toISOString().slice(0, 10)}\n`;
+  if (dateRange) {
+    dateRangeLine = `From ${dateRange[0]} to ${dateRange[1]}\n`;
   }
 
   const avgPomodoroSeconds = avgDuration("pomodoro", metrics.sessions);
@@ -87,13 +70,7 @@ export function displayStatsBox(metricsPath: string) {
       : "") +
     "\n" +
     chalk.yellow(`Average Worked per Day: ${formatSecondsAsHMS(avgDaySeconds)}\n`) +
-    chalk.yellow(`Average Worked per Week: ${formatSecondsAsHMS(avgWeekSeconds)}\n`) +
-    (mostProductiveDay
-      ? chalk.yellow(
-          `Most Productive Day: ${mostProductiveDay[0]} (${mostProductiveDay[1]} pomodoros)\n`,
-        )
-      : "") +
-    chalk.yellow(`Longest Daily Streak: ${longestStreak} day(s)\n`);
+    chalk.yellow(`Average Worked per Week: ${formatSecondsAsHMS(avgWeekSeconds)}\n`);
 
   const boxedOutput = boxen(content, {
     padding: 1,
