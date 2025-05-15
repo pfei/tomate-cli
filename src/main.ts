@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import chalk from "chalk";
 import cliCursor from "cli-cursor";

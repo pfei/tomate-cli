@@ -1,21 +1,24 @@
 {
   "name": "tomate-cli",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "A simple CLI pomodoro app",
   "type": "module",
   "main": "./dist/main.js",
   "types": "./dist/main.d.ts",
+  "bin": {
+    "tomate": "./dist/main.js"
+  },
   "scripts": {
     "build": "tsc && copyfiles -u 1 \"src/assets/**/*.{mp3,wav}\" dist",
     "start": "node ./dist/main.js",
     "clean": "rm -rf dist",
     "dev": "npm run clean && npm run build && npm run start",
     "reset-config": "node ./dist/main.js --reset-config",
-    "manual-test": "node ./dist/test-state.js",
     "test": "vitest",
     "coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts,.tsx",
-    "format": "prettier --write \"src/**/*.{ts,js,json,md}\""
+    "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -25,18 +28,20 @@
     "pomodoro",
     "typescript"
   ],
-  "author": "Pierre Feilles <pierre.feilles@gmail.com>",
-  "license": "ISC",
+  "author": "Pierre Feilles <4628744+pfei@users.noreply.github.com>",
+  "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.26.0",
     "@types/node": "^22.14.1",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",
+    "@vitest/coverage-v8": "^3.1.1",
     "copyfiles": "^2.4.1",
     "eslint": "^9.26.0",
     "eslint-config-prettier": "^10.1.2",
     "eslint-plugin-prettier": "^5.4.0",
     "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.0",
     "vitest": "^3.1.1"
@@ -47,7 +52,6 @@
     "cli-cursor": "^5.0.0",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
-    "ts-node": "^10.9.2",
     "zod": "^3.24.3"
   }
 }
