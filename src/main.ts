@@ -1,22 +1,21 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import chalk from "chalk";
 import cliCursor from "cli-cursor";
 import dotenv from "dotenv";
-import readline from "readline";
-import { loadConfig } from "./utils/config.js";
-import { displayError } from "./utils/errors.js";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { argv } from "node:process";
-import { resetConfig } from "./utils/config.js";
-import { playSound } from "./utils/sound.js";
-import { displayStatsBox } from "./ui/statsDisplay.js";
-import { displayCountdown, resetDisplayCountdown } from "./ui/displayCountdown.js";
-import { showConfigMenu, cleanupConfigMenu } from "./ui/configMenu.js";
-import { showTimeUpPopup } from "./ui/notifications.js";
-import { resolveConfigPath, resolveMetricsPath } from "./utils/resolvePaths.js";
+import readline from "readline";
 import { createState } from "./core/state.js";
+import { cleanupConfigMenu, showConfigMenu } from "./ui/configMenu.js";
+import { displayCountdown, resetDisplayCountdown } from "./ui/displayCountdown.js";
 import { displayHelp } from "./ui/displayHelp.js";
+import { showTimeUpPopup } from "./ui/notifications.js";
+import { displayStatsBox } from "./ui/statsDisplay.js";
+import { loadConfig, resetConfig } from "./utils/config.js";
+import { displayError } from "./utils/errors.js";
+import { resolveConfigPath, resolveMetricsPath } from "./utils/resolvePaths.js";
+import { playSound } from "./utils/sound.js";
 
 ////////////////////////////////////////////////////
 // --- Load environment variables from .env ---
@@ -26,6 +25,7 @@ dotenv.config();
 const knownFlags = [
   "--config-path",
   "--metrics-path",
+  "--show-paths",
   "--print-paths",
   "--set-config-path",
   "--set-metrics-path",
@@ -59,7 +59,7 @@ const state = createState(CONFIG_PATH, METRICS_PATH);
 const { getState, updateState, advanceCycle } = state;
 
 // --- Handle early-exit CLI flags before main() ---
-if (argv.includes("--print-paths")) {
+if (argv.includes("--print-paths") || argv.includes("--show-paths")) {
   console.log("Config path:", CONFIG_PATH);
   console.log("Metrics path:", METRICS_PATH);
   process.exit(0);

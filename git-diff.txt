@@ -1,0 +1,65 @@
+diff --git a/src/main.ts b/src/main.ts
+index 4a18700..e8a6939 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -1,22 +1,21 @@
+ #!/usr/bin/env node
+ 
+-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+ import chalk from "chalk";
+ import cliCursor from "cli-cursor";
+ import dotenv from "dotenv";
+-import readline from "readline";
+-import { loadConfig } from "./utils/config.js";
+-import { displayError } from "./utils/errors.js";
++import { existsSync, readFileSync, writeFileSync } from "node:fs";
+ import { argv } from "node:process";
+-import { resetConfig } from "./utils/config.js";
+-import { playSound } from "./utils/sound.js";
+-import { displayStatsBox } from "./ui/statsDisplay.js";
++import readline from "readline";
++import { createState } from "./core/state.js";
++import { cleanupConfigMenu, showConfigMenu } from "./ui/configMenu.js";
+ import { displayCountdown, resetDisplayCountdown } from "./ui/displayCountdown.js";
+-import { showConfigMenu, cleanupConfigMenu } from "./ui/configMenu.js";
++import { displayHelp } from "./ui/displayHelp.js";
+ import { showTimeUpPopup } from "./ui/notifications.js";
++import { displayStatsBox } from "./ui/statsDisplay.js";
++import { loadConfig, resetConfig } from "./utils/config.js";
++import { displayError } from "./utils/errors.js";
+ import { resolveConfigPath, resolveMetricsPath } from "./utils/resolvePaths.js";
+-import { createState } from "./core/state.js";
+-import { displayHelp } from "./ui/displayHelp.js";
++import { playSound } from "./utils/sound.js";
+ 
+ ////////////////////////////////////////////////////
+ // --- Load environment variables from .env ---
+@@ -26,6 +25,7 @@ dotenv.config();
+ const knownFlags = [
+   "--config-path",
+   "--metrics-path",
++  "--show-paths",
+   "--print-paths",
+   "--set-config-path",
+   "--set-metrics-path",
+@@ -59,7 +59,7 @@ const state = createState(CONFIG_PATH, METRICS_PATH);
+ const { getState, updateState, advanceCycle } = state;
+ 
+ // --- Handle early-exit CLI flags before main() ---
+-if (argv.includes("--print-paths")) {
++if (argv.includes("--print-paths") || argv.includes("--show-paths")) {
+   console.log("Config path:", CONFIG_PATH);
+   console.log("Metrics path:", METRICS_PATH);
+   process.exit(0);
+diff --git a/src/ui/displayHelp.ts b/src/ui/displayHelp.ts
+index 60f5bde..a2a4e5b 100644
+--- a/src/ui/displayHelp.ts
++++ b/src/ui/displayHelp.ts
+@@ -8,6 +8,7 @@ export function displayHelp() {
+     --reset-config      Reset configuration to defaults
+     --config-path <p>   Use a custom config file path
+     --metrics-path <p>  Use a custom metrics file path
++    --show-paths        Show config and metrics file paths
+   
+   Key Controls (while running):
+     p     Pause/Resume timer
