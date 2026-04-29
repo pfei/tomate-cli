@@ -207,11 +207,6 @@ This is useful if you want to:
 
 ---
 
-## License
-
-MIT
-
----
 
 ## Author
 
