@@ -118,6 +118,7 @@ node ./dist/main.js --stats
     --reset-config      Reset configuration to defaults
     --config-path <p>   Use a custom config file path
     --metrics-path <p>  Use a custom metrics file path
+    --show-paths        Show config and metrics file paths
 
   Key Controls (while running):
     p     Pause/Resume timer
