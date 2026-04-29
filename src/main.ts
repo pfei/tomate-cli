@@ -175,7 +175,7 @@ process.stdin.setRawMode(true);
 process.stdin.on("keypress", (str, key) => {
   if (getState().inConfigMenu) return;
 
-  if (key.name === "p") {
+  if (key.name === "p" || key.name == "space") {
     updateState({ isPaused: !getState().isPaused });
     displayCountdown(getState().secondsLeft, getState().isPaused, getState);
   } else if (key.name === "q") {
