@@ -32,6 +32,7 @@ const knownFlags = [
   "--reset-config",
   "--stats",
   "--help",
+  "--task",
   // add other flags here as needed
 ];
 
@@ -54,9 +55,12 @@ const configPathArg = getArgValue("--config-path");
 const metricsPathArg = getArgValue("--metrics-path");
 const CONFIG_PATH = resolveConfigPath(configPathArg);
 const METRICS_PATH = resolveMetricsPath(metricsPathArg);
+const taskLabel = getArgValue("--task");
 
 const state = createState(CONFIG_PATH, METRICS_PATH);
 const { getState, updateState, advanceCycle } = state;
+
+updateState({ currentTask: taskLabel || "generic" });
 
 // --- Handle early-exit CLI flags before main() ---
 if (argv.includes("--print-paths") || argv.includes("--show-paths")) {

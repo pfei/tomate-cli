@@ -1,7 +1,7 @@
 import boxen from "boxen";
 import chalk from "chalk";
-import { formatTime } from "../utils/timeFormat.js";
 import { TimerState } from "../core/state.js";
+import { formatTime } from "../utils/timeFormat.js";
 
 let firstRender = true;
 
@@ -22,12 +22,15 @@ export function displayCountdown(
 
   const mode = state.currentMode as Mode;
   const modeDisplay = modeDisplayMap[mode];
+  const taskDisplay = chalk.gray(`Task: ${state.currentTask}`);
 
   const timeString = formatTime(secondsLeft);
   const pauseMessage = isPaused ? chalk.red("[PAUSED]") : "";
 
   const boxedTime = boxen(
-    `${modeDisplay} ${timeString} ${pauseMessage}\n\n` + `[p]ause   [q]uit   [c]onfig`,
+    `${taskDisplay}\n` +
+      `${modeDisplay} ${timeString} ${pauseMessage}\n\n` +
+      `[p]ause   [q]uit   [c]onfig`,
     {
       padding: 1,
       borderColor: "cyan",

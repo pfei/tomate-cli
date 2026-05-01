@@ -1,6 +1,5 @@
-import { loadConfig } from "../utils/config.js";
+import { Config, loadConfig } from "../utils/config.js";
 import { recordSession } from "../utils/metrics.js";
-import { Config } from "../utils/config.js";
 
 export interface TimerState {
   isPaused: boolean;
@@ -9,6 +8,7 @@ export interface TimerState {
   currentCycle: number;
   secondsLeft: number;
   config: Config;
+  currentTask: string;
 }
 
 export function createState(configPath: string, metricsPath: string) {
@@ -23,6 +23,7 @@ export function createState(configPath: string, metricsPath: string) {
         currentCycle: 0,
         secondsLeft: 0,
         config: loadConfig(configPath),
+        currentTask: "generic",
       };
     }
     return _state;
@@ -61,6 +62,7 @@ export function createState(configPath: string, metricsPath: string) {
         start: startTime.toISOString(),
         end: endTime.toISOString(),
         type: sessionType,
+        task: currentState.currentTask,
       },
       metricsPath,
     );

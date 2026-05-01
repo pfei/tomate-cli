@@ -9,7 +9,7 @@ export function displayHelp() {
     --config-path <p>   Use a custom config file path
     --metrics-path <p>  Use a custom metrics file path
     --show-paths        Show config and metrics file paths
-  
+    --task <name>       Set a label for the current session
   Key Controls (while running):
     p     Pause/Resume timer
     q     Quit

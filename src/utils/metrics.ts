@@ -1,12 +1,13 @@
-import { z } from "zod";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { z } from "zod";
 import { displayError } from "./errors.js";
 
 const SessionSchema = z.object({
   start: z.string().datetime(),
   end: z.string().datetime(),
   type: z.enum(["pomodoro", "shortBreak", "longBreak"]),
+  task: z.string(),
 });
 
 const MetricsSchema = z.object({
