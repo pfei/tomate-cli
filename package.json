@@ -1,6 +1,6 @@
 {
   "name": "tomate-cli",
-  "version": "0.0.4",
+  "version": "0.1.0-beta",
   "description": "A simple CLI pomodoro app",
   "type": "module",
   "main": "./dist/main.js",
