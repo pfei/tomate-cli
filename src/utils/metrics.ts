@@ -7,20 +7,18 @@ const SessionSchema = z.object({
   start: z.string().datetime(),
   end: z.string().datetime(),
   type: z.enum(["pomodoro", "shortBreak", "longBreak"]),
-  task: z.string(),
+  task: z.string().optional(),
 });
 
 const MetricsSchema = z.object({
   sessions: z.array(SessionSchema),
 });
 
-export type PomodoroSession = z.infer<typeof SessionSchema>;
+export type Session = z.infer<typeof SessionSchema>;
+export type PomodoroSession = Session;
 export type Metrics = z.infer<typeof MetricsSchema>;
-
 export const DEFAULT_METRICS: Metrics = { sessions: [] };
-
 export type SessionType = "pomodoro" | "shortBreak" | "longBreak";
-export type Session = { type: SessionType; start: string; end: string };
 
 export function avgDuration(type: SessionType, sessions: Session[]): number {
   const filtered = sessions.filter((s) => s.type === type);

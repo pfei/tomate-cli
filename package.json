@@ -18,7 +18,8 @@
     "coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "report": "tsx scripts/tasks-report.ts"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -42,6 +43,7 @@
     "eslint-plugin-prettier": "^5.4.0",
     "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.0",
     "vitest": "^3.1.1"
