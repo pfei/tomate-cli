@@ -14,6 +14,7 @@ import { showTimeUpPopup } from "./ui/notifications.js";
 import { displayStatsBox, displayTasksReport } from "./ui/statsDisplay.js";
 import { loadConfig, resetConfig } from "./utils/config.js";
 import { displayError } from "./utils/errors.js";
+import { getTasksReport } from "./utils/metrics.js";
 import { resolveConfigPath, resolveMetricsPath } from "./utils/resolvePaths.js";
 import { playSound } from "./utils/sound.js";
 
@@ -32,6 +33,7 @@ const knownFlags = [
   "--reset-config",
   "--stats",
   "--report",
+  "--report-json",
   "--help",
   "--task",
   // add other flags here as needed
@@ -208,6 +210,10 @@ function main() {
     process.exit(0);
   } else if (argv.includes("--report")) {
     displayTasksReport(METRICS_PATH);
+    process.exit(0);
+  } else if (argv.includes("--report-json")) {
+    const report = getTasksReport(METRICS_PATH);
+    console.log(JSON.stringify(report, null, 2));
     process.exit(0);
   } else {
     try {
