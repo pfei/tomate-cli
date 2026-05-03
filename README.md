@@ -30,6 +30,8 @@ A simple, terminal-based Pomodoro timer and stats tracker.
 - Terminal UI with colorful, boxed countdown and controls
 - Sound notifications (assets included)
 - Session statistics: total Pomodoros, average per day/week, break times, and more
+- Task labeling: tag sessions with `--task <name>` to track time per project
+- Time report grouped by task (`--report`, or `--report-json` for JSON output pipeable to `jq`)
 - Config menu: interactive, in-terminal
 - Persistent config and metrics (JSON files in your home directory)
 - Tested core logic (Vitest)
@@ -105,6 +107,50 @@ Or directly:
 node ./dist/main.js --stats
 ```
 
+### Show task report
+
+Formatted output:
+
+```
+tomate --report
+```
+
+JSON output, pipeable to `jq`:
+
+```
+tomate --report-json
+```
+
+Custom metrics file:
+
+```
+tomate --report --metrics-path ~/myconfigs/tomate-metrics.json
+tomate --report-json --metrics-path ~/myconfigs/tomate-metrics.json
+```
+
+Pipe to `jq` to sort tasks by time spent:
+
+```
+tomate --report-json | jq 'to_entries | sort_by(-.value.totalDecimalHours) | map({task: .key, sessions: .value.sessions, duration: .value.totalTimeHours})'
+```
+
+Example output:
+
+```json
+[
+  {
+    "task": "myproject",
+    "sessions": 6,
+    "duration": "02:30:00"
+  },
+  {
+    "task": "emails",
+    "sessions": 2,
+    "duration": "00:50:00"
+  }
+]
+```
+
 ---
 
 ### Example: `tomate --help`
@@ -115,6 +161,8 @@ node ./dist/main.js --stats
   Options:
     --help              Show this help message and exit
     --stats             Show productivity stats and exit
+    --report            Show time report grouped by task (formatted)
+    --report-json       Show time report as JSON (pipeable to jq)
     --reset-config      Reset configuration to defaults
     --config-path <p>   Use a custom config file path
     --metrics-path <p>  Use a custom metrics file path
@@ -146,6 +194,17 @@ node ./dist/main.js --stats
 
 - View stats using `tomate --stats` or `node ./dist/main.js --stats`
 - Stats include total Pomodoros, average durations, break stats, and more
+
+### Task labeling
+
+Tag your sessions to track time per project:
+
+```
+tomate --task myproject
+tomate --task emails
+```
+
+Then view the breakdown with `tomate --report` or `tomate --report-json`.
 
 ---
 
@@ -208,7 +267,6 @@ This is useful if you want to:
 - [yad](https://github.com/v1cont/yad) (for optional popup notifications)
 
 ---
-
 
 ## Author
 
