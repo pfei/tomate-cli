@@ -1,10 +1,15 @@
-import chalk from "chalk";
 import boxen from "boxen";
-import { formatSecondsAsHMS, formatMinSec } from "../utils/timeFormat.js";
-import { avgDuration, totalDuration } from "../utils/metrics.js";
-import { loadMetrics, getMetricsStats } from "../utils/metrics.js";
+import chalk from "chalk";
 import { format, parseISO } from "date-fns";
 import type { Session } from "../utils/metrics.js";
+import {
+  avgDuration,
+  getMetricsStats,
+  getTasksReport,
+  loadMetrics,
+  totalDuration,
+} from "../utils/metrics.js";
+import { formatMinSec, formatSecondsAsHMS } from "../utils/timeFormat.js";
 
 export function getUniqueDays(sessions: Session[]): Set<string> {
   return new Set(sessions.map((s) => s.start.slice(0, 10)));
@@ -77,6 +82,44 @@ export function displayStatsBox(metricsPath: string) {
     borderColor: "cyan",
     borderStyle: "round",
     title: "📊 Pomodoro Statistics",
+    titleAlignment: "center",
+    margin: { top: 1, bottom: 1 },
+  });
+
+  console.log(boxedOutput);
+}
+
+export function displayTasksReport(metricsPath: string) {
+  const report = getTasksReport(metricsPath);
+  const tasks = Object.entries(report);
+
+  if (tasks.length === 0) {
+    console.log(chalk.yellow("No pomodoro sessions recorded yet."));
+    return;
+  }
+
+  // Sort tasks by total time descending
+  const sorted = tasks.sort(([, a], [, b]) => b.totalTimeMs - a.totalTimeMs);
+
+  const lines = sorted
+    .map(([task, stats]) => {
+      const taskLabel = chalk.green(task.padEnd(30));
+      const sessions = chalk.cyan(`${String(stats.sessions).padStart(3)} 🍅`);
+      const time = chalk.yellow(stats.totalTimeHours);
+      const decimal = chalk.gray(`(${stats.totalDecimalHours}h)`);
+      return `  ${taskLabel} ${sessions}  ${time} ${decimal}`;
+    })
+    .join("\n");
+
+  const header =
+    chalk.bold("  " + "Task".padEnd(30) + " Sessions    Duration\n") +
+    chalk.gray("  " + "─".repeat(60));
+
+  const boxedOutput = boxen(`${header}\n${lines}\n`, {
+    padding: 1,
+    borderColor: "green",
+    borderStyle: "round",
+    title: "📋 Tasks Report",
     titleAlignment: "center",
     margin: { top: 1, bottom: 1 },
   });

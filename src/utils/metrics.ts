@@ -20,6 +20,15 @@ export type Metrics = z.infer<typeof MetricsSchema>;
 export const DEFAULT_METRICS: Metrics = { sessions: [] };
 export type SessionType = "pomodoro" | "shortBreak" | "longBreak";
 
+export interface TaskStats {
+  sessions: number;
+  totalTimeMs: number;
+  totalDecimalHours: number;
+  totalTimeHours: string;
+}
+
+export type TasksReport = Record<string, TaskStats>;
+
 export function avgDuration(type: SessionType, sessions: Session[]): number {
   const filtered = sessions.filter((s) => s.type === type);
   if (filtered.length === 0) return 0;
@@ -94,4 +103,40 @@ export function getMetricsStats(metricsPath: string) {
     totalLongBreaks,
     totalPomodoroTimeSeconds,
   };
+}
+
+export function getTasksReport(metricsPath: string): TasksReport {
+  const metrics = loadMetrics(metricsPath);
+
+  return metrics.sessions
+    .filter((s) => s.type === "pomodoro")
+    .reduce((acc, s) => {
+      const task = s.task || "generic";
+      const durationMs = new Date(s.end).getTime() - new Date(s.start).getTime();
+
+      if (!acc[task]) {
+        acc[task] = {
+          sessions: 0,
+          totalTimeMs: 0,
+          totalDecimalHours: 0,
+          totalTimeHours: "",
+        };
+      }
+
+      acc[task].sessions += 1;
+      acc[task].totalTimeMs += durationMs;
+      acc[task].totalDecimalHours = parseFloat((acc[task].totalTimeMs / 3_600_000).toFixed(2));
+
+      const totalSeconds = Math.floor(acc[task].totalTimeMs / 1000);
+      const h = Math.floor(totalSeconds / 3600)
+        .toString()
+        .padStart(2, "0");
+      const m = Math.floor((totalSeconds % 3600) / 60)
+        .toString()
+        .padStart(2, "0");
+      const s_ = (totalSeconds % 60).toString().padStart(2, "0");
+      acc[task].totalTimeHours = `${h}:${m}:${s_}`;
+
+      return acc;
+    }, {} as TasksReport);
 }

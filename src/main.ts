@@ -11,7 +11,7 @@ import { cleanupConfigMenu, showConfigMenu } from "./ui/configMenu.js";
 import { displayCountdown, resetDisplayCountdown } from "./ui/displayCountdown.js";
 import { displayHelp } from "./ui/displayHelp.js";
 import { showTimeUpPopup } from "./ui/notifications.js";
-import { displayStatsBox } from "./ui/statsDisplay.js";
+import { displayStatsBox, displayTasksReport } from "./ui/statsDisplay.js";
 import { loadConfig, resetConfig } from "./utils/config.js";
 import { displayError } from "./utils/errors.js";
 import { resolveConfigPath, resolveMetricsPath } from "./utils/resolvePaths.js";
@@ -31,6 +31,7 @@ const knownFlags = [
   "--set-metrics-path",
   "--reset-config",
   "--stats",
+  "--report",
   "--help",
   "--task",
   // add other flags here as needed
@@ -204,6 +205,9 @@ function main() {
     process.exit(0);
   } else if (argv.includes("--stats")) {
     displayStatsBox(METRICS_PATH);
+    process.exit(0);
+  } else if (argv.includes("--report")) {
+    displayTasksReport(METRICS_PATH);
     process.exit(0);
   } else {
     try {

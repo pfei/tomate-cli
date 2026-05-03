@@ -5,6 +5,7 @@ export function displayHelp() {
   Options:
     --help              Show this help message and exit
     --stats             Show productivity stats and exit
+    --report            Show time report grouped by task and exit
     --reset-config      Reset configuration to defaults
     --config-path <p>   Use a custom config file path
     --metrics-path <p>  Use a custom metrics file path
