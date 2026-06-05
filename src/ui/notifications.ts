@@ -1,35 +1,22 @@
 import { spawn } from "node:child_process";
 
-export function showTimeUpPopup(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const args = [
-      "--center",
-      "--sticky",
-      "--on-top",
-      "--button=(Return):0",
-      "--button-layout=center",
-      "--borders=20",
-      "--text=Time's Up!",
-      "--title=Tomate CLI",
-    ];
+const modeMessages: Record<string, string> = {
+  pomodoro:   "Pomodoro done! Time for a break. 🌻",
+  shortBreak: "Break over! Back to work. 🍅",
+  longBreak:  "Long break over! Ready to focus? 🍅",
+};
 
-    const env = {
-      ...process.env,
-      ...(process.env.GTK_THEME && { GTK_THEME: process.env.GTK_THEME }),
-    };
+export function showTimeUpNotification(mode: string): void {
+  const hasDisplay = !!(process.env.DISPLAY || process.env.WAYLAND_DISPLAY);
+  if (!hasDisplay) return;
 
-    const yadProcess = spawn("yad", args, {
-      env,
-      stdio: "ignore",
-      detached: true,
-    });
+  const message = modeMessages[mode] ?? "Time's up!";
 
-    yadProcess.on("error", reject).on("exit", (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`Yad exited with code ${code}`));
-      }
-    });
+  // notify-send is standard on any Linux desktop (libnotify)
+  const proc = spawn("notify-send", ["Tomate CLI 🍅", message, "--urgency=normal", "--expire-time=8000"], {
+    detached: true,
+    stdio: "ignore",
   });
+  proc.unref();
+  proc.on("error", () => {}); // silently ignore if notify-send not installed
 }
