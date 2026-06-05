@@ -1,14 +1,14 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TimerState } from "../core/state.js";
 import { formatTime } from "../utils/timeFormat.js";
 
 type Mode = "pomodoro" | "shortBreak" | "longBreak";
 
-const modeDisplay: Record<Mode, { label: string; color: "red" | "yellow" | "green" }> = {
-  pomodoro: { label: "🍅  Pomodoro", color: "red" },
-  shortBreak: { label: "🌻  Short Break", color: "yellow" },
-  longBreak: { label: "🌳  Long Break", color: "green" },
+const modeDisplay: Record<Mode, { label: string }> = {
+  pomodoro: { label: "🍅 Pomodoro" },
+  shortBreak: { label: "🌻 Short Break" },
+  longBreak: { label: "🌳 Long Break" },
 };
 
 interface Props {
@@ -61,33 +61,27 @@ export function TimerScreen({ getState, updateState, onQuit, onConfig, onTimeUp 
     }
   });
 
-  const { label, color } = modeDisplay[mode as Mode] ?? modeDisplay.pomodoro;
-  const col = isPaused ? "red" : color;
+  const { label } = modeDisplay[mode as Mode] ?? modeDisplay.pomodoro;
   const timeStr = formatTime(Math.max(0, seconds));
 
   return (
-    <Box flexDirection="column" alignItems="center" marginTop={1}>
+    <Box flexDirection="column" alignItems="flex-start" marginTop={1} marginLeft={2}>
       <Box
         borderStyle="round"
-        borderColor={col}
-        paddingX={4}
+        borderColor="cyan"
+        paddingX={2}
         paddingY={1}
         flexDirection="column"
-        alignItems="center"
-        minWidth={36}
+        minWidth={40}
       >
-        <Text color="gray">task: {task}</Text>
+        <Text color="gray">Task: {task}</Text>
+        <Text>
+          <Text>{label} </Text>
+          <Text color="cyan">{timeStr}</Text>
+          {isPaused && <Text color="red"> [PAUSED]</Text>}
+        </Text>
         <Text> </Text>
-        <Text color={col} bold>{label}</Text>
-        <Text> </Text>
-        <Text color={col} bold>{timeStr}</Text>
-        <Text> </Text>
-        {isPaused
-          ? <Text color="red" bold>[ PAUSED ]</Text>
-          : <Text color="gray" dimColor>running</Text>
-        }
-        <Text> </Text>
-        <Text color="gray" dimColor>[p] pause  [c] config  [q] quit</Text>
+        <Text color="gray">[p]ause    [q]uit    [c]onfig</Text>
       </Box>
     </Box>
   );

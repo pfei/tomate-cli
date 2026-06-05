@@ -95,7 +95,7 @@ function main() {
     try {
       const config = loadConfig(CONFIG_PATH);
       updateState({ secondsLeft: config.pomodoro });
-
+      process.stdout.write('\x1B[2J\x1B[H');
       const { unmount } = render(
         React.createElement(App, {
           configPath: CONFIG_PATH,
@@ -109,7 +109,7 @@ function main() {
             advanceCycle();
             updateState({ secondsLeft: getState().secondsLeft });
           },
-        })
+        }),
       );
     } catch (err) {
       displayError("Failed to initialize", err);

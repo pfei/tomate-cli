@@ -70,7 +70,7 @@ export function ConfigScreen({ configPath, getState, updateState, onBack }: Prop
     : "";
 
   return (
-    <Box flexDirection="column" alignItems="center" marginTop={1}>
+    <Box flexDirection="column" alignItems="flex-start" marginTop={1} marginLeft={2}>
       <Box
         borderStyle="round"
         borderColor="green"
