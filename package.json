@@ -18,6 +18,7 @@
     "coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,json,md}\"",
+    "bundle": "npm run build && npx ncc build dist/main.js -o bundle",
     "prepublishOnly": "npm run build"
   },
   "engines": {
@@ -39,6 +40,7 @@
     "@types/react": "^18.3.1",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",
+    "@vercel/ncc": "^0.38.4",
     "@vitest/coverage-v8": "^4.1.8",
     "copyfiles": "^2.4.1",
     "eslint": "^9.26.0",
