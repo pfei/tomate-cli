@@ -45,7 +45,7 @@ export function TimerScreen({ getState, updateState, onQuit, onConfig, onTimeUp 
         updateState({ secondsLeft: next });
         if (next < 0) {
           clearInterval(tick);
-          onTimeUp();
+          setTimeout(() => onTimeUp(), 0);
         }
         return next;
       });
