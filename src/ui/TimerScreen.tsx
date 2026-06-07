@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { TimerState } from "../core/state.js";
 import { formatTime } from "../utils/timeFormat.js";
@@ -21,33 +21,37 @@ interface Props {
 
 export function TimerScreen({ getState, updateState, onQuit, onConfig, onTimeUp }: Props) {
   const [seconds, setSeconds] = useState(() => getState().secondsLeft);
-  const [isPaused, setIsPaused] = useState(() => getState().isPaused);
+  const [isPaused, setIsPaused] = useState(false);
   const [mode, setMode] = useState(() => getState().currentMode);
   const [task, setTask] = useState(() => getState().currentTask);
 
+  // Sync loop — pulls external state changes (cycle advance, config update)
   useEffect(() => {
     const sync = setInterval(() => {
       const s = getState();
-      setMode(s.currentMode);
-      setTask(s.currentTask);
+      if (s.currentMode !== mode) setMode(s.currentMode);
+      if (s.currentTask !== task) setTask(s.currentTask);
       if (s.secondsLeft !== seconds) setSeconds(s.secondsLeft);
-      if (s.isPaused !== isPaused) setIsPaused(s.isPaused);
     }, 200);
     return () => clearInterval(sync);
-  }, [seconds, isPaused]);
+  }, [mode, task, seconds]);
 
+  // Countdown tick
   useEffect(() => {
     if (isPaused) return;
     const tick = setInterval(() => {
       setSeconds((prev) => {
         const next = prev - 1;
         updateState({ secondsLeft: next });
-        if (next < 0) { clearInterval(tick); onTimeUp(); }
+        if (next < 0) {
+          clearInterval(tick);
+          onTimeUp();
+        }
         return next;
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [isPaused]);
+  }, [isPaused, mode]); // mode change restarts the countdown
 
   useInput((input, key) => {
     if (input === "p" || input === " ") {
