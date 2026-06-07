@@ -1,276 +1,207 @@
 # 🍅 tomate-cli
 
-A simple, terminal-based Pomodoro timer and stats tracker.
+A robust Pomodoro timer for the terminal — built with TypeScript and Ink (React for TUI).
 
----
+![screenshot](./docs/screenshot.png)
 
-## Table of Contents
-
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [CLI Usage](#cli-usage)
-- [Usage](#usage)
-- [Windows Users](#windows-users)
-- [Development](#development)
-- [Configuration & Data](#configuration--data)
-- [Custom Config and Metrics Paths](#custom-config-and-metrics-paths)
-- [Dependencies](#dependencies)
-- [License](#license)
-- [Author](#author)
-
----
-
-## <img src="./docs/screenshot.png" alt="Screenshot of tomate-cli in action" style="width:30%;">
-
----
+______________________________________________________________________
 
 ## Features
 
-- Pomodoro cycles with short/long breaks (configurable durations)
-- Terminal UI with colorful, boxed countdown and controls
-- Sound notifications (assets included)
-- Session statistics: total Pomodoros, average per day/week, break times, and more
+- **Reactive TUI** — built with [Ink](https://github.com/vadimdemedes/ink) (React component tree rendering to the terminal)
+- Pomodoro cycles with short/long breaks, fully configurable
+- Keyboard-driven config menu — no prompts, pure arrow-key navigation
 - Task labeling: tag sessions with `--task <name>` to track time per project
-- Time report grouped by task (`--report`, or `--report-json` for JSON output pipeable to `jq`)
-- Config menu: interactive, in-terminal
-- Persistent config and metrics (JSON files in your home directory)
-- Tested core logic (Vitest)
+- Time report grouped by task (`--report`, or `--report-json` pipeable to `jq`)
+- Session statistics: total Pomodoros, average durations, break times
+- Desktop notifications via `notify-send` (Linux, optional)
+- Sound notifications via `ffplay` (optional, graceful fallback if unavailable)
+- tmux bell on session end — works headless, no display required
+- Persistent config and metrics (JSON files, paths configurable)
+- Tested core logic with [Vitest](https://vitest.dev/) (48 tests)
 
----
+______________________________________________________________________
 
 ## Quick Start
 
-### 1. Requirements
+### Requirements
 
 - Node.js v18+
-- Unix-like shell (Linux, macOS, or [WSL2](https://docs.microsoft.com/en-us/windows/wsl/) on Windows)
-- [yad](https://github.com/v1cont/yad) (for popup notifications, optional but recommended)
+- Unix-like shell (Linux, macOS, or WSL2 on Windows)
+- `notify-send` (optional, for desktop notifications — `libnotify-bin` on Debian/Ubuntu)
+- `ffplay` (optional, for sound — `ffmpeg` package)
 
-### 2. Install
+### Install
 
-```
+```bash
 git clone https://github.com/pfei/tomate-cli.git
 cd tomate-cli
 npm install
-```
-
-### 3. Build
-
-```
 npm run build
 ```
 
-### 4. Run
+### Run
 
-#### Option 1: Use as a global CLI with `npm link`
-
-```
-npm link
-tomate
-```
-
-#### Option 2: Run directly with Node
-
-```
+```bash
 node ./dist/main.js
+# or with a task label:
+node ./dist/main.js --task myproject
 ```
 
----
+To install globally:
 
-## CLI Usage
-
-### Show help
-
-With global CLI:
-
-```
-tomate --help
-```
-
-Or directly:
-
-```
-node ./dist/main.js --help
-```
-
-### Show stats
-
-With global CLI:
-
-```
-tomate --stats
-```
-
-Or directly:
-
-```
-node ./dist/main.js --stats
-```
-
-### Show task report
-
-Formatted output:
-
-```
-tomate --report
-```
-
-JSON output, pipeable to `jq`:
-
-```
-tomate --report-json
-```
-
-Custom metrics file:
-
-```
-tomate --report --metrics-path ~/myconfigs/tomate-metrics.json
-tomate --report-json --metrics-path ~/myconfigs/tomate-metrics.json
-```
-
-Pipe to `jq` to sort tasks by time spent:
-
-```
-tomate --report-json | jq 'to_entries | sort_by(-.value.totalDecimalHours) | map({task: .key, sessions: .value.sessions, duration: .value.totalTimeHours})'
-```
-
-Example output:
-
-```json
-[
-  {
-    "task": "myproject",
-    "sessions": 6,
-    "duration": "02:30:00"
-  },
-  {
-    "task": "emails",
-    "sessions": 2,
-    "duration": "00:50:00"
-  }
-]
-```
-
----
-
-### Example: `tomate --help`
-
-```
-  Usage: tomate-cli [options]
-
-  Options:
-    --help              Show this help message and exit
-    --stats             Show productivity stats and exit
-    --report            Show time report grouped by task (formatted)
-    --report-json       Show time report as JSON (pipeable to jq)
-    --reset-config      Reset configuration to defaults
-    --config-path <p>   Use a custom config file path
-    --metrics-path <p>  Use a custom metrics file path
-    --show-paths        Show config and metrics file paths
-    --task <name>       Set a label for the current session
-
-  Key Controls (while running):
-    p     Pause/Resume timer
-    q     Quit
-    c     Open config menu
-```
-
----
-
-## Usage
-
-### Controls
-
-- `[p]` Pause/Resume timer
-- `[q]` Quit
-- `[c]` Open config menu
-
-### Config Menu
-
-- Change Pomodoro, short break, or long break durations (in seconds)
-- Changes are saved and used for future sessions
-
-### Statistics
-
-- View stats using `tomate --stats` or `node ./dist/main.js --stats`
-- Stats include total Pomodoros, average durations, break stats, and more
-
-### Task labeling
-
-Tag your sessions to track time per project:
-
-```
+```bash
+npm install -g .
 tomate --task myproject
-tomate --task emails
 ```
 
-Then view the breakdown with `tomate --report` or `tomate --report-json`.
+______________________________________________________________________
 
----
+## Controls
 
-## Windows Users
+| Key | Action |
+|-----|--------|
+| `p` or `space` | Pause / Resume |
+| `c` | Open config menu |
+| `q` | Quit |
 
-> **Note:**  
-> This project uses Unix shell commands (e.g., `rm -rf dist`) in its scripts.  
-> **Windows users must use [WSL2](https://docs.microsoft.com/en-us/windows/wsl/) (Windows Subsystem for Linux) to build and run this project.**
-> Native Windows shells are not supported.
+______________________________________________________________________
 
----
+## CLI Reference
+
+```
+Usage: tomate [options]
+
+Options:
+  --help                    Show help and exit
+  --task <name>             Label sessions for time tracking
+  --stats                   Show productivity stats
+  --report                  Show time report grouped by task
+  --report-json             JSON report, pipeable to jq
+  --reset-config            Reset config to defaults
+  --config-path <path>      Custom config file path
+  --metrics-path <path>     Custom metrics file path
+  --show-paths              Print config and metrics paths
+```
+
+### Examples
+
+```bash
+# Start a labeled session
+tomate --task myproject
+
+# View stats
+tomate --stats
+
+# View task report
+tomate --report
+
+# JSON report sorted by time spent
+tomate --report-json | jq '
+  to_entries
+  | sort_by(-.value.totalDecimalHours)
+  | map({task: .key, sessions: .value.sessions, duration: .value.totalTimeHours})
+'
+```
+
+______________________________________________________________________
+
+## Configuration
+
+Config and metrics are stored as JSON in `~/.config/tomate-cli/` by default.
+
+```bash
+# Use custom paths
+tomate --config-path ~/myconfigs/tomate-config.json \
+       --metrics-path ~/myconfigs/tomate-metrics.json
+
+# Persist custom paths across sessions
+tomate --set-config-path ~/myconfigs/tomate-config.json
+tomate --set-metrics-path ~/myconfigs/tomate-metrics.json
+```
+
+Useful for syncing config/metrics with cloud storage or keeping multiple profiles.
+
+______________________________________________________________________
+
+## VPS / Headless usage
+
+tomate-cli works on headless servers (no display required):
+
+- Sound and desktop notifications are automatically skipped when `$DISPLAY` and `$WAYLAND_DISPLAY` are unset
+- tmux bell fires on session end — configure tmux to flash the status bar:
+
+```bash
+# ~/.tmux.conf
+set -g visual-bell on
+set -g bell-action any
+```
+
+______________________________________________________________________
+
+## Windows
+
+> This project uses Unix shell commands in its build scripts (`rm -rf`, etc.).
+> **Windows users must use [WSL2](https://docs.microsoft.com/en-us/windows/wsl/) — native Windows shells are not supported.**
+
+______________________________________________________________________
 
 ## Development
 
-- **Lint:** `npm run lint`
-- **Format:** `npm run format`
-- **Test:** `npm test`
-- **Coverage:** `npm run coverage`
-- **Clean build:** `npm run clean && npm run build`
-
----
-
-## Configuration & Data
-
-- Config and metrics are stored as JSON files in your home directory (e.g., `~/.config/tomate-cli/`).
-- Sound assets are included and copied to `dist/` on build.
-
----
-
-## Custom Config and Metrics Paths
-
-By default, tomate-cli stores config and metrics in your home directory (e.g., `~/.config/tomate-cli/`).  
-You can override these locations using the `--config-path` and `--metrics-path` options.
-
-**Examples:**
-
-```
-# Use a custom config and metrics file location with the CLI
-tomate --config-path ~/myconfigs/tomate-config.json --metrics-path ~/myconfigs/tomate-metrics.json
-
-# Or, if running directly:
-node ./dist/main.js --config-path ~/myconfigs/tomate-config.json --metrics-path ~/myconfigs/tomate-metrics.json
+```bash
+npm test              # run tests (48 tests, Vitest)
+npm run coverage      # test coverage
+npm run lint          # ESLint
+npm run format        # Prettier
+npm run build         # compile TypeScript -> dist/
+npm run bundle        # build + ncc single-file bundle -> bundle/
 ```
 
-This is useful if you want to:
+______________________________________________________________________
 
-- Sync your config/metrics with cloud storage
-- Keep multiple profiles
-- Use temporary/test data
+## Architecture
 
----
+```
+src/
+├── main.ts              # CLI entry point — flag parsing, render(<App>)
+├── core/
+│   └── state.ts         # shared timer state (closure pattern)
+├── ui/
+│   ├── App.tsx          # root component — screen routing (timer/config/timeup)
+│   ├── TimerScreen.tsx  # countdown, keyboard input, live state sync
+│   ├── ConfigScreen.tsx # keyboard-driven config menu (ink-select-input)
+│   └── TimeUpScreen.tsx # session-end screen with tmux bell
+└── utils/
+    ├── config.ts        # load/save config (Zod validation)
+    ├── metrics.ts       # session recording and aggregation
+    ├── sound.ts         # ffplay wrapper with headless fallback
+    └── notifications.ts # notify-send wrapper with headless fallback
+```
+
+**State management:** a single `_state` object lives in a closure in `core/state.ts`. Ink components hold local React state (`useState`) for rendering, and sync from `_state` via a polling interval. This keeps the React component tree decoupled from the global timer state.
+
+______________________________________________________________________
 
 ## Dependencies
 
-- [boxen](https://github.com/sindresorhus/boxen)
-- [chalk](https://github.com/chalk/chalk)
-- [date-fns](https://date-fns.org/)
-- [zod](https://github.com/colinhacks/zod)
-- [Vitest](https://vitest.dev/) (for testing)
-- [yad](https://github.com/v1cont/yad) (for optional popup notifications)
+| Package | Purpose |
+|---------|---------|
+| [ink](https://github.com/vadimdemedes/ink) | React renderer for terminal UI |
+| [react](https://react.dev/) | Component model and state management |
+| [ink-select-input](https://github.com/vadimdemedes/ink-select-input) | Keyboard-driven select menu |
+| [zod](https://github.com/colinhacks/zod) | Config schema validation |
+| [chalk](https://github.com/chalk/chalk) | Terminal colors |
+| [boxen](https://github.com/sindresorhus/boxen) | Boxed output for stats display |
+| [date-fns](https://date-fns.org/) | Date formatting for metrics |
 
----
+______________________________________________________________________
 
 ## Author
 
-Pierre Feilles  
-[GitHub Profile](https://github.com/pfei)
+Pierre Feilles — [github.com/pfei](https://github.com/pfei)
 
----
+______________________________________________________________________
+
+## License
+
+MIT
