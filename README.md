@@ -62,6 +62,7 @@ ______________________________________________________________________
 | Key | Action |
 |-----|--------|
 | `p` or `space` | Pause / Resume |
+| `s` (×2) | Skip current session (no metrics recorded) |
 | `c` | Open config menu |
 | `q` | Quit |
 

@@ -16,16 +16,18 @@ interface Props {
   updateState: (partial: Partial<TimerState>) => void;
   onQuit: () => void;
   onConfig: () => void;
+  onSkip: () => void;
   onTimeUp: () => void;
 }
 
-export function TimerScreen({ getState, updateState, onQuit, onConfig, onTimeUp }: Props) {
+export function TimerScreen({ getState, updateState, onQuit, onConfig, onSkip, onTimeUp }: Props) {
   const [seconds, setSeconds] = useState(() => getState().secondsLeft);
   const [isPaused, setIsPaused] = useState(false);
   const [mode, setMode] = useState(() => getState().currentMode);
   const [task, setTask] = useState(() => getState().currentTask);
+  const [skipPending, setSkipPending] = useState(false);
 
-  // Sync loop — pulls external state changes (cycle advance, config update)
+  // Sync loop
   useEffect(() => {
     const sync = setInterval(() => {
       const s = getState();
@@ -51,13 +53,29 @@ export function TimerScreen({ getState, updateState, onQuit, onConfig, onTimeUp 
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [isPaused, mode]); // mode change restarts the countdown
+  }, [isPaused, mode]);
+
+  // Skip confirmation timeout — auto-cancel after 3s
+  useEffect(() => {
+    if (!skipPending) return;
+    const timeout = setTimeout(() => setSkipPending(false), 3000);
+    return () => clearTimeout(timeout);
+  }, [skipPending]);
 
   useInput((input, key) => {
     if (input === "p" || input === " ") {
       const next = !isPaused;
       setIsPaused(next);
       updateState({ isPaused: next });
+    } else if (input === "s") {
+      if (skipPending) {
+        // second s — confirm skip
+        setSkipPending(false);
+        setTimeout(() => onSkip(), 0);
+      } else {
+        // first s — ask for confirmation
+        setSkipPending(true);
+      }
     } else if (input === "q" || (key.ctrl && input === "c")) {
       onQuit();
     } else if (input === "c") {
@@ -85,7 +103,10 @@ export function TimerScreen({ getState, updateState, onQuit, onConfig, onTimeUp 
           {isPaused && <Text color="red"> [PAUSED]</Text>}
         </Text>
         <Text> </Text>
-        <Text color="gray">[p]ause    [q]uit    [c]onfig</Text>
+        {skipPending
+          ? <Text color="yellow">skip? press [s] again to confirm (3s)</Text>
+          : <Text color="gray">[p]ause  [s]kip  [c]onfig  [q]uit</Text>
+        }
       </Box>
     </Box>
   );

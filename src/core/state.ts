@@ -78,10 +78,29 @@ export function createState(configPath: string, metricsPath: string) {
     _state = newState;
   }
 
+
+  function skipCycle(): void {
+    const currentState = getOrCreateState();
+    const newState = { ...currentState };
+    const config = currentState.config;
+
+    // Skip — advance cycle WITHOUT recording a session in metrics
+    if (newState.currentMode === "pomodoro") {
+      newState.currentCycle++;
+      newState.currentMode = newState.currentCycle % 4 === 0 ? "longBreak" : "shortBreak";
+    } else {
+      newState.currentMode = "pomodoro";
+    }
+
+    newState.secondsLeft = config[newState.currentMode];
+    _state = newState;
+  }
+
   return {
     getState,
     updateState,
     resetState,
     advanceCycle,
+    skipCycle,
   };
 }

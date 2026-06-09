@@ -10,12 +10,12 @@ interface Props {
   configPath: string;
   getState: () => TimerState;
   updateState: (partial: Partial<TimerState>) => void;
-  advanceCycle: () => void;
+  skipCycle: () => void;
   onQuit: () => void;
   onTimeUp: () => void;
 }
 
-export function App({ configPath, getState, updateState, advanceCycle, onQuit, onTimeUp }: Props) {
+export function App({ configPath, getState, updateState, skipCycle, onQuit, onTimeUp }: Props) {
   const [screen, setScreen] = useState<AppScreen>("timer");
   const [completedMode, setCompletedMode] = useState<string>("pomodoro");
 
@@ -48,6 +48,10 @@ export function App({ configPath, getState, updateState, advanceCycle, onQuit, o
       updateState={updateState}
       onQuit={onQuit}
       onConfig={() => setScreen("config")}
+      onSkip={() => {
+        skipCycle();
+        updateState({ secondsLeft: getState().secondsLeft });
+      }}
       onTimeUp={() => {
         setCompletedMode(getState().currentMode);
         setScreen("timeup");

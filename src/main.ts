@@ -44,7 +44,7 @@ const METRICS_PATH = resolveMetricsPath(metricsPathArg);
 const taskLabel = getArgValue("--task");
 
 const state = createState(CONFIG_PATH, METRICS_PATH);
-const { getState, updateState, advanceCycle } = state;
+const { getState, updateState, advanceCycle, skipCycle } = state;
 updateState({ currentTask: taskLabel || "generic" });
 
 if (argv.includes("--print-paths") || argv.includes("--show-paths")) {
@@ -101,7 +101,7 @@ function main() {
           configPath: CONFIG_PATH,
           getState,
           updateState,
-          advanceCycle,
+          skipCycle,
           onQuit: () => { unmount(); process.exit(0); },
           onTimeUp: () => {
             showTimeUpNotification(getState().currentMode);
