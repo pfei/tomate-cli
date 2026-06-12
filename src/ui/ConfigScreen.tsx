@@ -47,6 +47,7 @@ export function ConfigScreen({ configPath, getState, updateState, onBack }: Prop
     if (!isNaN(secs) && secs > 0) {
       config[editing] = secs;
       saveConfig(config, configPath);
+      updateState({ config });
       if (editing === "pomodoro") updateState({ secondsLeft: secs });
       setFeedback({ msg: `✅ Saved ${formatTime(secs)}`, ok: true });
     } else {
