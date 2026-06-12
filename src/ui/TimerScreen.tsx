@@ -42,6 +42,11 @@ export function TimerScreen({ getState, updateState, onQuit, onConfig, onSkip, o
   useEffect(() => {
     if (isPaused) return;
     const tick = setInterval(() => {
+
+      // If the mode changed externally (skip), this tick is stale —
+      // don't write to state, let the sync loop pick up the new cycle.
+      if (getState().currentMode !== mode) return;
+
       setSeconds((prev) => {
         const next = prev - 1;
         updateState({ secondsLeft: next });
